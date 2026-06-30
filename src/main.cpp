@@ -2,12 +2,14 @@
 
 #include "frontend/frontend.hpp"
 
+// TODO: use cmake to compile
+// raylib
+
 int main(int argc, char** argv) {
     std::cout << "hello world!\n";
 
-    EmuWindow window;
-    char header[] = "header name";
-    window.init();
+    EmuWindow emuWindow;
+    emuWindow.init();
 
     while (true) {
     }
