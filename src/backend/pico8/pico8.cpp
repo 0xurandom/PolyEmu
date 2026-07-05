@@ -1,10 +1,6 @@
-#include "pico8.hpp"
-
 #include <fstream>
-#include <functional>
 #include <iostream>
 #include <string>
-#include <vector>
 
 using namespace std;
 
@@ -75,66 +71,3 @@ bool loadCartridge(const string &filepath) {
     cout << "Lua:" << rawLua << '\n';
     return true;
 }
-
-vector<Token> tokeniseLua(string line) {
-    vector<Token> tokenArr;
-
-    for (char c : line) {
-        Token token;
-
-        switch (c) {
-            case '+': {
-                token.kind = PLUS;
-                break;
-            }
-
-            case '-': {
-                token.kind = MINUS;
-                break;
-            }
-
-            case '*': {
-                token.kind = ASTERISK;
-                break;
-            }
-
-            case '%': {
-                token.kind = PERCENT;
-                break;
-            }
-
-            case '(': {
-                token.kind = LPAREN;
-                break;
-            }
-
-            case ')': {
-                token.kind = RPAREN;
-                break;
-            }
-
-            case '=': {
-                token.kind = EQUALS;
-                break;
-            }
-
-            case '<': {
-                token.kind = LESS_THAN;
-                break;
-            }
-
-            case '>': {
-                token.kind = GREATER_THAN;
-                break;
-            }
-
-            default: {
-                cout << "Unknown token:" << c << '\n';
-                break;
-            }
-        }
-        tokenArr.push_back(token);
-    }
-}
-
-string processLua(vector<Token> tokenArr) {}
