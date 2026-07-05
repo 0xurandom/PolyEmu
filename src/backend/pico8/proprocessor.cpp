@@ -1,5 +1,7 @@
 #include <algorithm>
+#include <initializer_list>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -7,6 +9,8 @@
 
 using namespace std;
 
+vector<Token> getPreviousExpression(vector<Token>& tokens, size_t i);
+vector<Token> getNextExpression(vector<Token>& tokens, size_t i);
 TokenKind lookupCompoundOpReplacement(TokenKind kind);
 string lookupBitwiseReplacement(TokenKind kind);
 
@@ -224,8 +228,10 @@ string generateLua(vector<Token> tokens, Lexer lexer) {
                 break;
             }
         }
+        output += ' ';
     }
-    output += ' ';
+
+    return output;
 }
 
 vector<Token> preprocessTokens(vector<Token> tokens) {
@@ -240,13 +246,20 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
             case TokenKind::PercentEquals:
             case TokenKind::CaretEquals:
             case TokenKind::DotDotEquals: {
-                // x += SOMETHING
-                // to x = x + SOMETHING
+                // x += y
+                // to x = x + y
                 output.push_back((Token){.kind = TokenKind::Equals});
-                output.push_back(tokens.at(i - 1));
+
+                vector<Token> x = getPreviousExpression(tokens, i);
+                output.insert(output.end(), make_move_iterator(x.begin()),
+                              make_move_iterator(x.end()));
+
                 output.push_back((Token){
                     .kind = lookupCompoundOpReplacement(tokens.at(i).kind)});
-                output.push_back(tokens.at(i + 1));
+
+                vector<Token> y = getNextExpression(tokens, i);
+                output.insert(output.end(), make_move_iterator(y.begin()),
+                              make_move_iterator(y.end()));
 
                 i++;
                 break;
@@ -260,10 +273,20 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                     .kind = TokenKind::Iden,
                     .str = lookupBitwiseReplacement(TokenKind::IntegerDivide)});
                 output.push_back((Token){.kind = TokenKind::Lparen});
-                output.push_back(tokens.at(i - 1));
+
+                vector<Token> x = getPreviousExpression(tokens, i);
+                output.insert(output.end(), make_move_iterator(x.begin()),
+                              make_move_iterator(x.end()));
+
                 output.push_back((Token){.kind = TokenKind::Comma});
-                output.push_back(tokens.at(i + 1));
+
+                vector<Token> y = getNextExpression(tokens, i);
+                output.insert(output.end(), make_move_iterator(y.begin()),
+                              make_move_iterator(y.end()));
+
                 output.push_back((Token){.kind = TokenKind::Rparen});
+
+                i++;
                 break;
             }
 
@@ -284,9 +307,13 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                     .kind = TokenKind::Iden,
                     .str = lookupBitwiseReplacement(tokens.at(i).kind)});
                 output.push_back((Token){.kind = TokenKind::Lparen});
-                output.push_back(tokens.at(i - 1));
+                vector<Token> x = getPreviousExpression(tokens, i);
+                output.insert(output.end(), make_move_iterator(x.begin()),
+                              make_move_iterator(x.end()));
                 output.push_back((Token){.kind = TokenKind::Comma});
-                output.push_back(tokens.at(i + 1));
+                vector<Token> y = getNextExpression(tokens, i);
+                output.insert(output.end(), make_move_iterator(y.begin()),
+                              make_move_iterator(y.end()));
                 output.push_back((Token){.kind = TokenKind::Rparen});
 
                 i++;
@@ -324,8 +351,8 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 output.push_back((Token){.kind = TokenKind::Lparen});
                 i++;
                 while (tokens.at(i).kind != TokenKind::Newline) {
-                    tokens.push_back(tokens.at(i));
-                    break;
+                    output.push_back(tokens.at(i));
+                    i++;
                 }
                 output.push_back((Token){.kind = TokenKind::Rparen});
 
@@ -362,15 +389,30 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
     return output;
 }
 
-vector<Token> getPreviousExpression(vector<Token> tokens, size_t i) {
+vector<Token> getPreviousExpression(const vector<Token>& tokens, size_t i) {
+    // TODO: going back to newline doesnt always work
     size_t initial_i = i;
 
-    while (tokens.at(i).kind != TokenKind::Newline) {
+    while (i > 0 && tokens.at(i).kind != TokenKind::Newline) {
         i--;
     }
     size_t final_i = i;
     vector<Token> expr(tokens.begin() + final_i + 1,
                        tokens.begin() + initial_i - 1);
+    return expr;
+}
+
+vector<Token> getNextExpression(const vector<Token>& tokens, size_t i) {
+    size_t initial_i = i;
+
+    while (tokens.at(i).kind != TokenKind::Newline) {
+        i++;
+    }
+
+    size_t final_i = i;
+
+    vector<Token> expr(tokens.begin() + initial_i + 1,
+                       tokens.begin() + final_i - 1);
     return expr;
 }
 
@@ -387,7 +429,7 @@ TokenKind lookupCompoundOpReplacement(TokenKind kind) {
         case TokenKind::PercentEquals:
             return TokenKind::Percent;
         case TokenKind::CaretEquals:
-            return TokenKind::CaretEquals;
+            return TokenKind::Caret;
         case TokenKind::DotDotEquals:
             return TokenKind::DotDot;
 
