@@ -1,6 +1,10 @@
 #pragma once
 
+#include <string>
+
 class EmuBackend {
    public:
-    virtual bool init() = 0;
+    virtual ~EmuBackend() = default;
+
+    virtual bool loadROM(const std::string &filepath) = 0;
 };

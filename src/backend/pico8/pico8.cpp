@@ -1,22 +1,18 @@
+#include "pico8.hpp"
+
 #include <fstream>
 #include <iostream>
 #include <string>
 
 using namespace std;
 
+bool Pico8::loadROM(const string &filepath) { return loadCartridge(filepath); }
+
 enum CartSection {
     LUA,
     GFX,
     MAP,
 };
-
-bool loadCartridge(const string &filepath);
-
-int main() {
-    string path = "testcartridge.p8";
-
-    return loadCartridge(path);
-}
 
 bool loadCartridge(const string &filepath) {
     ifstream file(filepath);
@@ -27,8 +23,7 @@ bool loadCartridge(const string &filepath) {
     }
 
     string line;
-    // TODO: convert raw lua into
-    // regular lua
+
     string rawLua = "";
     CartSection cartSection;
 

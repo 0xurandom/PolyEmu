@@ -1,1 +1,1 @@
-class EmuBackend {};
+#include "backend.hpp"
