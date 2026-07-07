@@ -53,12 +53,32 @@ string generateLua(vector<Token> tokens, Lexer lexer) {
             }
 
             case TokenKind::Slash: {
-                output += '\\';
+                output += '/';
                 break;
             }
 
             case TokenKind::Percent: {
                 output += '%';
+                break;
+            }
+
+            case TokenKind::EqualsEquals: {
+                output += "==";
+                break;
+            }
+
+            case TokenKind::LessEquals: {
+                output += "<=";
+                break;
+            }
+
+            case TokenKind::GreaterEquals: {
+                output += ">=";
+                break;
+            }
+
+            case TokenKind::DotDot: {
+                output += "..";
                 break;
             }
 
@@ -137,14 +157,10 @@ string generateLua(vector<Token> tokens, Lexer lexer) {
                 break;
             }
 
-                // TODO: check if plus equals are allowed
-
             case TokenKind::NotEquals: {
                 output += "~=";
                 break;
             }
-
-                // TODO: check integerdivide
 
             case TokenKind::BitwiseAnd: {
                 output += '&';
@@ -175,8 +191,6 @@ string generateLua(vector<Token> tokens, Lexer lexer) {
                 output += ">>";
                 break;
             }
-
-                // TODO: check arith shift right
 
             case TokenKind::Flr: {
                 output += "flr";
@@ -257,11 +271,6 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 output.push_back((Token){
                     .kind = lookupCompoundOpReplacement(tokens.at(i).kind)});
 
-                vector<Token> y = getNextExpression(tokens, i);
-                output.insert(output.end(), make_move_iterator(y.begin()),
-                              make_move_iterator(y.end()));
-
-                i++;
                 break;
             }
 
@@ -280,13 +289,17 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
 
                 output.push_back((Token){.kind = TokenKind::Comma});
 
-                vector<Token> y = getNextExpression(tokens, i);
-                output.insert(output.end(), make_move_iterator(y.begin()),
-                              make_move_iterator(y.end()));
+                size_t temp_i = i;
 
-                output.push_back((Token){.kind = TokenKind::Rparen});
+                while (temp_i < tokens.size() &&
+                       tokens.at(temp_i).kind != TokenKind::Newline) {
+                    temp_i++;
+                }
 
-                i++;
+                // TODO: this is inefficient
+                tokens.insert(tokens.begin() + temp_i,
+                              (Token){.kind = TokenKind::Rparen});
+
                 break;
             }
 
@@ -301,22 +314,29 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 // a >>b
                 // to __shiftright(a,b)
                 // a will already be present
-
-                output.pop_back();
+                vector<Token> x = getPreviousExpression(tokens, i);
+                for (size_t j = 0; j < x.size(); j++) {
+                    output.pop_back();
+                }
                 output.push_back((Token){
                     .kind = TokenKind::Iden,
                     .str = lookupBitwiseReplacement(tokens.at(i).kind)});
                 output.push_back((Token){.kind = TokenKind::Lparen});
-                vector<Token> x = getPreviousExpression(tokens, i);
+
                 output.insert(output.end(), make_move_iterator(x.begin()),
                               make_move_iterator(x.end()));
                 output.push_back((Token){.kind = TokenKind::Comma});
-                vector<Token> y = getNextExpression(tokens, i);
-                output.insert(output.end(), make_move_iterator(y.begin()),
-                              make_move_iterator(y.end()));
-                output.push_back((Token){.kind = TokenKind::Rparen});
 
-                i++;
+                size_t temp_i = i;
+
+                while (temp_i < tokens.size() &&
+                       tokens.at(temp_i).kind != TokenKind::Newline) {
+                    temp_i++;
+                }
+
+                tokens.insert(tokens.begin() + temp_i,
+                              (Token){.kind = TokenKind::Rparen});
+
                 break;
             }
 
@@ -324,21 +344,26 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 // if (condition) then statement
                 // to if condition then statement end
                 output.push_back((Token){.kind = TokenKind::KwIf});
-                if (tokens.at(i + 1).kind == TokenKind::Lparen) {
-                    i++;
-
+                if (i + 1 < tokens.size() &&
+                    tokens.at(i + 1).kind == TokenKind::Lparen) {
                     // TODO: change these to for loops
-                    while (tokens.at(i).kind != TokenKind::Rparen) {
+                    size_t rparen_i = i + 1;
+                    while (rparen_i < tokens.size() &&
+                           tokens.at(rparen_i).kind != TokenKind::Rparen) {
                         output.push_back(tokens.at(i));
-                        i++;
+                        rparen_i++;
                     }
-                    output.push_back((Token){.kind = TokenKind::KwThen});
-                    i++;
-                    while (tokens.at(i).kind != TokenKind::Newline) {
-                        output.push_back(tokens.at(i));
-                        i++;
+                    if (rparen_i < tokens.size()) {
+                        tokens.insert(tokens.begin() + rparen_i + 1,
+                                      (Token){.kind = TokenKind::KwThen});
                     }
-                    output.push_back((Token){.kind = TokenKind::KwEnd});
+                    size_t newline_i = rparen_i;
+                    while (newline_i < tokens.size() &&
+                           tokens.at(newline_i).kind != TokenKind::Newline) {
+                        newline_i++;
+                    }
+                    tokens.insert(tokens.begin() + newline_i,
+                                  (Token){.kind = TokenKind::KwEnd});
                 }
                 break;
             }
@@ -349,12 +374,15 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 output.push_back(
                     (Token){.kind = TokenKind::Iden, .str = "print"});
                 output.push_back((Token){.kind = TokenKind::Lparen});
-                i++;
-                while (tokens.at(i).kind != TokenKind::Newline) {
-                    output.push_back(tokens.at(i));
-                    i++;
+
+                size_t temp_i = i;
+                while (temp_i < tokens.size() &&
+                       tokens.at(i).kind != TokenKind::Newline) {
+                    temp_i++;
                 }
-                output.push_back((Token){.kind = TokenKind::Rparen});
+
+                tokens.insert(tokens.begin() + temp_i,
+                              (Token){.kind = TokenKind::Rparen});
 
                 break;
             }
@@ -405,7 +433,7 @@ vector<Token> getPreviousExpression(const vector<Token>& tokens, size_t i) {
 vector<Token> getNextExpression(const vector<Token>& tokens, size_t i) {
     size_t initial_i = i;
 
-    while (tokens.at(i).kind != TokenKind::Newline) {
+    while (i < tokens.size() && tokens.at(i).kind != TokenKind::Newline) {
         i++;
     }
 
