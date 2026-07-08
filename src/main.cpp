@@ -1,9 +1,10 @@
 #include <raylib.h>
 
 #include <iostream>
-
+#define RAYGUI_IMPLEMENTATION
 #include "backend/pico8/pico8.hpp"
 #include "frontend/frontend.hpp"
+#include "raygui.h"
 
 // TODO: use cmake to compile
 // raylib
