@@ -3,7 +3,7 @@
 #include "pico8.hpp"
 using namespace std;
 
-void Pico8::processGfxLine(Pico8 pico8, string line, size_t GfxLineNum) {
+void Pico8::processGfxLine(string line, size_t GfxLineNum) {
     for (size_t i = 0; i < line.length(); i = i + 2) {
         char a = line.at(i);
         char b = line.at(i + 1);

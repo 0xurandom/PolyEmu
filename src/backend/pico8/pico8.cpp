@@ -55,8 +55,7 @@ bool Pico8::loadROM(const string &filepath) {
             }
 
             case GFX: {
-                // TODO
-                break;
+                processGfxLine(line, gfxStart - lineNum);
             }
 
             case MAP: {
