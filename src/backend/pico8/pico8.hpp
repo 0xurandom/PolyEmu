@@ -9,6 +9,7 @@ class Pico8 : public EmuBackend {
     bool loadROM(const std::string &filepath) override;
     uint8_t peek(size_t index);
     void poke(size_t index, uint8_t value);
+    void processGfxLine(Pico8 pico8, std::string line, size_t GfxLineNum);
 
    private:
     uint8_t ram[32768] = {0};
