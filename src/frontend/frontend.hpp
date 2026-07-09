@@ -1,5 +1,6 @@
 #pragma once
 
+#include <raylib.h>
 class EmuWindow {
    public:
     void init();

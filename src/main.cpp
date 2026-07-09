@@ -6,9 +6,6 @@
 #include "frontend/frontend.hpp"
 #include "raygui.h"
 
-// TODO: use cmake to compile
-// raylib
-
 using namespace std;
 
 int main(int argc, char** argv) {
@@ -23,18 +20,24 @@ int main(int argc, char** argv) {
 
     while (!WindowShouldClose()) {
         BeginDrawing();
+
         ClearBackground(RAYWHITE);
 
         GuiGrid(Rectangle{0, 30, (float)emuWindow.getWidth(),
-                          (float)emuWindow.getHeight() - 30},
+                          (float)emuWindow.getHeight() - 20},
                 "grid", (float)20, 1, &mouseCell);
         DrawText("Drag and drop ROMs here", 200, 200, 20, LIGHTGRAY);
 
         GuiPanel(Rectangle{0, 0, (float)emuWindow.getWidth()}, nullptr);
 
-        if (GuiDropdownBox(Rectangle{0, 0, 600, 30}, "File;Open;Exit",
+        if (GuiDropdownBox(Rectangle{0, 0, 75, 20}, "File;Open;Exit",
                            &emuWindow.menuBar.fileActive,
                            emuWindow.menuBar.fileEditMode)) {
+        }
+
+        if (GuiDropdownBox(Rectangle{75 + 0, 0, 75 + 75, 20}, "Emulator;Reset",
+                           &emuWindow.menuBar.emulatorActive,
+                           emuWindow.menuBar.emulatorEditMode)) {
         }
 
         if (IsFileDropped()) {

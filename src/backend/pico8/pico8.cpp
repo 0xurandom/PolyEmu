@@ -6,15 +6,13 @@
 
 using namespace std;
 
-bool Pico8::loadROM(const string &filepath) { return loadCartridge(filepath); }
-
 enum CartSection {
     LUA,
     GFX,
     MAP,
 };
 
-bool loadCartridge(const string &filepath) {
+bool Pico8::loadROM(const string &filepath) {
     ifstream file(filepath);
 
     if (!file.is_open()) {
