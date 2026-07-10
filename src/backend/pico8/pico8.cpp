@@ -49,6 +49,7 @@ bool Pico8::loadROM(const string &filepath) {
             continue;
         } else if (line.rfind("__", 0) == 0) {
             cerr << "Error: Unexpected ine starting with __: " << line << '\n';
+            continue;
         }
 
         switch (cartSection) {
@@ -58,12 +59,12 @@ bool Pico8::loadROM(const string &filepath) {
             }
 
             case GFX: {
-                processGfxLine(line, gfxStart - lineNum);
+                processGfxLine(line, lineNum - gfxStart - 1);
                 break;
             }
 
             case MAP: {
-                processMapLine(line, mapStart - lineNum);
+                processMapLine(line, lineNum - mapStart - 1);
                 break;
             }
             case NONE: {
