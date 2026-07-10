@@ -83,7 +83,7 @@ void Pico8::poke(size_t index, uint8_t value) {
 }
 
 void Pico8::processGfxLine(string line, size_t GfxLineNum) {
-    for (size_t i = 0; i < line.length(); i = i + 2) {
+    for (size_t i = 0; i + 1 < line.length(); i = i + 2) {
         char a = line.at(i);
         char b = line.at(i + 1);
 
@@ -99,7 +99,7 @@ void Pico8::processGfxLine(string line, size_t GfxLineNum) {
 }
 
 void Pico8::processMapLine(string line, size_t MapLineNum) {
-    for (size_t i = 0; i < line.size(); i = i + 2) {
+    for (size_t i = 0; i + 1 < line.size(); i = i + 2) {
         char a = line.at(i);
         char b = line.at(i + 1);
 

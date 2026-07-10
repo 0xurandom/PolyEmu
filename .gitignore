@@ -4,3 +4,4 @@ main.out
 build/
 .cache/
 __cmake_systeminformation/
+.zed/
