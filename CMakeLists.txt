@@ -15,6 +15,7 @@ add_executable(polyemu)
 target_sources(polyemu PRIVATE
   src/main.cpp
   src/backend/pico8/pico8.cpp
+  src/backend/pico8/utils.cpp
   src/frontend/frontend.cpp
 )
 

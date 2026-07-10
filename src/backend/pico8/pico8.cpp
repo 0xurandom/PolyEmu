@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+#include "utils.hpp"
+
 using namespace std;
 
 enum CartSection {
@@ -66,13 +68,48 @@ bool Pico8::loadROM(const string &filepath) {
     }
 
     file.close();
+
     cout << "Successfully loaded file\n";
     cout << "Lua:" << rawLua << '\n';
     return true;
 }
 
+void Pico8::setRawLua(string rawLua) { RawLua = rawLua; }
+
 uint8_t Pico8::peek(size_t index) { return ram[index]; }
 void Pico8::poke(size_t index, uint8_t value) {
     ram[index] = value;
     return;
+}
+
+void Pico8::processGfxLine(string line, size_t GfxLineNum) {
+    for (size_t i = 0; i < line.length(); i = i + 2) {
+        char a = line.at(i);
+        char b = line.at(i + 1);
+
+        uint8_t leftNibble = hexToInt(a);
+        uint8_t rightNibble = (hexToInt(b)) << 4;
+
+        uint8_t byte = leftNibble | rightNibble;
+
+        size_t index = (GfxLineNum * 64) + (i / 2);
+
+        poke(index, byte);
+    }
+}
+
+void Pico8::processMapLine(string line, size_t MapLineNum) {
+    for (size_t i = 0; i < line.size(); i = i + 2) {
+        char a = line.at(i);
+        char b = line.at(i + 1);
+
+        uint8_t leftNibble = (hexToInt(a)) << 4;
+        uint8_t rightNibble = hexToInt(b);
+
+        uint8_t byte = leftNibble | rightNibble;
+
+        size_t index = 0x2000 + (MapLineNum * 128) + (i / 2);
+
+        poke(index, byte);
+    }
 }
