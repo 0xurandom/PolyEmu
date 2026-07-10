@@ -30,8 +30,6 @@ bool Pico8::loadROM(const string &filepath) {
     CartSection cartSection;
 
     while (getline(file, line)) {
-        // TODO: use switch here
-
         if (line == "__lua__") {
             luaStart = lineNum;
             cartSection = LUA;
@@ -59,7 +57,7 @@ bool Pico8::loadROM(const string &filepath) {
             }
 
             case MAP: {
-                // TODO
+                processMapLine(line, mapStart - lineNum);
                 break;
             }
         }
