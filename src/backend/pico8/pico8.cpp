@@ -13,6 +13,7 @@ enum CartSection {
     LUA,
     GFX,
     MAP,
+    NONE,
 };
 
 bool Pico8::loadROM(const string &filepath) {
@@ -29,7 +30,7 @@ bool Pico8::loadROM(const string &filepath) {
     size_t luaStart, gfxStart, mapStart;
 
     string rawLua = "";
-    CartSection cartSection;
+    CartSection cartSection = NONE;
 
     while (getline(file, line)) {
         if (line == "__lua__") {
@@ -46,6 +47,8 @@ bool Pico8::loadROM(const string &filepath) {
             mapStart = lineNum;
             cartSection = MAP;
             continue;
+        } else if (line.rfind("__", 0) == 0) {
+            cerr << "Error: Unexpected ine starting with __: " << line << '\n';
         }
 
         switch (cartSection) {
@@ -56,10 +59,14 @@ bool Pico8::loadROM(const string &filepath) {
 
             case GFX: {
                 processGfxLine(line, gfxStart - lineNum);
+                break;
             }
 
             case MAP: {
                 processMapLine(line, mapStart - lineNum);
+                break;
+            }
+            case NONE: {
                 break;
             }
         }
