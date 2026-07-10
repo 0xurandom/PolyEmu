@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 #include <iterator>
 #include <vector>
 
@@ -68,6 +69,7 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                     if (peek(lexer) == '\\') {
                         lexer.cursor = lexer.cursor + 2;
                     }
+                    advance(lexer);
                 }
                 int length = lexer.cursor - start;
 
@@ -121,7 +123,7 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             case ' ':
             case '\t': {
                 advance(lexer);
-                break;
+                continue;
             }
 
             case '\n': {
@@ -130,12 +132,14 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             }
 
             case '+': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::PlusEquals;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::Plus;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
@@ -173,32 +177,38 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             }
 
             case '*': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::AsteriskEquals;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::Asterisk;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
             case '/': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::SlashEquals;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::Slash;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
             case '%': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::PercentEquals;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::Percent;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
@@ -255,12 +265,14 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             }
 
             case ':': {
-                if (peekNext(lexer) == ':')
+                if (peekNext(lexer) == ':') {
                     token.kind = TokenKind::DoubleColon;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::Colon;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
@@ -272,16 +284,20 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             }
 
             case '.': {
-                if (peekNext(lexer) != '.')
+                if (peekNext(lexer) != '.') {
                     token.kind = TokenKind::Dot;
-                else if (peekNext(lexer, 2) == '.')
+                    advance(lexer);
+                } else if (peekNext(lexer, 2) == '.') {
                     token.kind = TokenKind::DotDotDot;
-                else if (peekNext(lexer, 2) == '=')
+                    advance(lexer, 3);
+                } else if (peekNext(lexer, 2) == '=') {
                     token.kind = TokenKind::DotDotEquals;
-                else
+                    advance(lexer, 3);
+                } else {
                     token.kind = TokenKind::DotDot;
+                    advance(lexer, 2);
+                }
 
-                advance(lexer);
                 break;
             }
 
@@ -292,22 +308,26 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             }
 
             case '=': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::EqualsEquals;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::Equals;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
             case '^': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::CaretEquals;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::Caret;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
@@ -319,38 +339,48 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             }
 
             case '<': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::LessEquals;
-                else if (peekNext(lexer) == '<')
+                    advance(lexer, 2);
+                } else if (peekNext(lexer) == '<') {
                     token.kind = TokenKind::ShiftLeft;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::Less;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
             case '>': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::GreaterEquals;
-                else if (peekNext(lexer) == '>' && peekNext(lexer, 2) == '>')
+                    advance(lexer, 2);
+                } else if (peekNext(lexer) == '>' &&
+                           peekNext(lexer, 2) == '>') {
                     token.kind = TokenKind::ArithShiftRight;
-                else if (peekNext(lexer) == '>' && !(peekNext(lexer, 2) == '>'))
+                    advance(lexer, 2);
+                } else if (peekNext(lexer) == '>' &&
+                           !(peekNext(lexer, 2) == '>')) {
                     token.kind = TokenKind::ShiftRight;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::Greater;
-
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
             case '\\': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::IntDiveEquals;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::IntegerDivide;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
@@ -369,13 +399,22 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             }
 
             case '~': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::NotEquals;
-                else
+                    advance(lexer, 2);
+                } else {
                     token.kind = TokenKind::BitwiseNot;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
+            }
+
+            default: {
+                cerr << "Warning: Unexpected character passed to lexer:" << '\"'
+                     << peek(lexer) << '\"' << '\n';
+                advance(lexer);
+                continue;
             }
         }
 
