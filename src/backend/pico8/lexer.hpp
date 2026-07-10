@@ -123,8 +123,8 @@ class Lexer {
 
     std::vector<Token> tokenise(Lexer lexer);
 
-    char peek(Lexer lexer);
-    char peekNext(Lexer lexer, int n = 1);
+    char peek(Lexer &lexer);
+    char peekNext(Lexer &lexer, int n = 1);
 
-    void advance(Lexer lexer);
+    void advance(Lexer &lexer, int n = 1);
 };

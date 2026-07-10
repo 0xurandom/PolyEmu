@@ -7,15 +7,19 @@
 
 using namespace std;
 
-char Lexer::peek(Lexer lexer) { return lexer.rawLua.at(lexer.cursor); }
+char Lexer::peek(Lexer& lexer) { return lexer.rawLua.at(lexer.cursor); }
 
-char Lexer::peekNext(Lexer lexer, int n) {
+char Lexer::peekNext(Lexer& lexer, int n) {
     // peek n digits forward
     // default n = 1
     return lexer.rawLua.at(lexer.cursor + n);
 }
 
-void Lexer::advance(Lexer lexer) { lexer.cursor++; }
+void Lexer::advance(Lexer& lexer, int n) {
+    // advance n digits forward
+    // default n = 1
+    lexer.cursor = lexer.cursor + n;
+}
 
 vector<Token> Lexer::tokenise(Lexer lexer) {
     vector<Token> tokenArr;
@@ -136,12 +140,35 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             }
 
             case '-': {
-                if (peekNext(lexer) == '=')
+                if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::MinusEquals;
-                else
+                    advance(lexer);
+                }
+
+                else if (peekNext(lexer) == '-' &&
+                         !(peekNext(lexer, 2) == '[' &&
+                           peekNext(lexer, 3) == '[')) {
+                    // -- comments without [[
+
+                    while (peek(lexer) != '\n') {
+                        advance(lexer);
+                    }
+                    advance(lexer);
+
+                } else if (peekNext(lexer) == '-' &&
+                           (peekNext(lexer, 2) == '[' &&
+                            peekNext(lexer, 3) == '[')) {
+                    // -- comments with [[
+                    advance(lexer, 3);
+                    while (!(peek(lexer) == ']' && peekNext(lexer) == ']')) {
+                        advance(lexer);
+                    }
+                    advance(lexer);
+                } else {
                     token.kind = TokenKind::Minus;
 
-                advance(lexer);
+                    advance(lexer);
+                }
                 break;
             }
 
