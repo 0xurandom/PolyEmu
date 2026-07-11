@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cstddef>
 #include <initializer_list>
 #include <iostream>
@@ -278,7 +277,9 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 output.push_back((Token){.kind = TokenKind::Equals});
 
                 vector<Token> x = getPreviousExpression(tokens, i);
-                addendum.insert({i, x});
+                addendum[i].insert(addendum[i].end(),
+                                   make_move_iterator(x.begin()),
+                                   make_move_iterator(x.end()));
 
                 output.push_back((Token){
                     .kind = lookupCompoundOpReplacement(tokens.at(i).kind)});
@@ -296,7 +297,9 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 output.push_back((Token){.kind = TokenKind::Lparen});
 
                 vector<Token> x = getPreviousExpression(tokens, i);
-                addendum.insert({i, x});
+                addendum[i].insert(addendum[i].end(),
+                                   make_move_iterator(x.begin()),
+                                   make_move_iterator(x.end()));
 
                 output.push_back((Token){.kind = TokenKind::Comma});
 
@@ -307,8 +310,7 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                     temp_i++;
                 }
 
-                addendum.insert({temp_i, vector<Token>{(Token){
-                                             .kind = TokenKind::Rparen}}});
+                addendum[temp_i].push_back((Token){.kind = TokenKind::Rparen});
 
                 break;
             }
@@ -345,8 +347,7 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                     temp_i++;
                 }
 
-                addendum.insert(
-                    {i, vector<Token>{(Token){.kind = TokenKind::Rparen}}});
+                addendum[i].push_back((Token){.kind = TokenKind::Rparen});
 
                 break;
             }
@@ -358,25 +359,27 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 if (i + 1 < tokens.size() &&
                     tokens.at(i + 1).kind == TokenKind::Lparen) {
                     // TODO: change these to for loops
+
                     size_t rparen_i = i + 1;
                     while (rparen_i < tokens.size() &&
                            tokens.at(rparen_i).kind != TokenKind::Rparen) {
-                        output.push_back(tokens.at(i));
+                        output.push_back(tokens.at(rparen_i));
                         rparen_i++;
                     }
+
                     if (rparen_i < tokens.size()) {
-                        addendum.insert(
-                            {rparen_i + 1, vector<Token>{(Token){
-                                               .kind = TokenKind::KwThen}}});
+                        addendum[rparen_i + 1].push_back(
+                            (Token){.kind = TokenKind::KwThen});
                     }
+
                     size_t newline_i = rparen_i;
                     while (newline_i < tokens.size() &&
                            tokens.at(newline_i).kind != TokenKind::Newline) {
                         newline_i++;
                     }
-                    addendum.insert(
-                        {newline_i,
-                         vector<Token>{(Token){.kind = TokenKind::KwEnd}}});
+
+                    addendum[newline_i].push_back(
+                        (Token){.kind = TokenKind::KwEnd});
                 }
                 break;
             }
@@ -390,12 +393,11 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
 
                 size_t temp_i = i;
                 while (temp_i < tokens.size() &&
-                       tokens.at(i).kind != TokenKind::Newline) {
+                       tokens.at(temp_i).kind != TokenKind::Newline) {
                     temp_i++;
                 }
 
-                addendum.insert({temp_i, vector<Token>{(Token){
-                                             .kind = TokenKind::Rparen}}});
+                addendum[temp_i].push_back((Token){.kind = TokenKind::Rparen});
 
                 break;
             }
