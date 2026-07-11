@@ -159,6 +159,8 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                     }
                     advance(lexer);
 
+                    // TODO: add support for --[==[ ]==]
+
                 } else if (peekNext(lexer) == '-' &&
                            (peekNext(lexer, 2) == '[' &&
                             peekNext(lexer, 3) == '[')) {
@@ -242,7 +244,7 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
 
             case '[': {
                 if (peekNext(lexer) == '[') {
-                    // is multi line str
+                    // is multi line string literal
                 }
                 token.kind = TokenKind::Lbracket;
 

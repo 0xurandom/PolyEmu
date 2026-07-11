@@ -1,8 +1,10 @@
 #include <algorithm>
+#include <cstddef>
 #include <initializer_list>
 #include <iostream>
 #include <iterator>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "lexer.hpp"
@@ -250,8 +252,19 @@ string generateLua(vector<Token> tokens, Lexer lexer) {
 
 vector<Token> preprocessTokens(vector<Token> tokens) {
     vector<Token> output;
+    unordered_map<size_t, vector<Token>> addendum;
 
     for (size_t i = 0; i < tokens.size(); i++) {
+        auto iterator = addendum.find(i);
+
+        if (iterator != addendum.end()) {
+            for (Token token : iterator->second) {
+                output.push_back(token);
+            }
+
+            addendum.erase(iterator);
+        }
+
         switch (tokens.at(i).kind) {
             case TokenKind::PlusEquals:
             case TokenKind::MinusEquals:
@@ -265,8 +278,7 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 output.push_back((Token){.kind = TokenKind::Equals});
 
                 vector<Token> x = getPreviousExpression(tokens, i);
-                output.insert(output.end(), make_move_iterator(x.begin()),
-                              make_move_iterator(x.end()));
+                addendum.insert({i, x});
 
                 output.push_back((Token){
                     .kind = lookupCompoundOpReplacement(tokens.at(i).kind)});
@@ -284,8 +296,7 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                 output.push_back((Token){.kind = TokenKind::Lparen});
 
                 vector<Token> x = getPreviousExpression(tokens, i);
-                output.insert(output.end(), make_move_iterator(x.begin()),
-                              make_move_iterator(x.end()));
+                addendum.insert({i, x});
 
                 output.push_back((Token){.kind = TokenKind::Comma});
 
@@ -296,9 +307,8 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                     temp_i++;
                 }
 
-                // TODO: this is inefficient
-                tokens.insert(tokens.begin() + temp_i,
-                              (Token){.kind = TokenKind::Rparen});
+                addendum.insert({temp_i, vector<Token>{(Token){
+                                             .kind = TokenKind::Rparen}}});
 
                 break;
             }
@@ -325,6 +335,7 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
 
                 output.insert(output.end(), make_move_iterator(x.begin()),
                               make_move_iterator(x.end()));
+
                 output.push_back((Token){.kind = TokenKind::Comma});
 
                 size_t temp_i = i;
@@ -334,8 +345,8 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                     temp_i++;
                 }
 
-                tokens.insert(tokens.begin() + temp_i,
-                              (Token){.kind = TokenKind::Rparen});
+                addendum.insert(
+                    {i, vector<Token>{(Token){.kind = TokenKind::Rparen}}});
 
                 break;
             }
@@ -354,16 +365,18 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                         rparen_i++;
                     }
                     if (rparen_i < tokens.size()) {
-                        tokens.insert(tokens.begin() + rparen_i + 1,
-                                      (Token){.kind = TokenKind::KwThen});
+                        addendum.insert(
+                            {rparen_i + 1, vector<Token>{(Token){
+                                               .kind = TokenKind::KwThen}}});
                     }
                     size_t newline_i = rparen_i;
                     while (newline_i < tokens.size() &&
                            tokens.at(newline_i).kind != TokenKind::Newline) {
                         newline_i++;
                     }
-                    tokens.insert(tokens.begin() + newline_i,
-                                  (Token){.kind = TokenKind::KwEnd});
+                    addendum.insert(
+                        {newline_i,
+                         vector<Token>{(Token){.kind = TokenKind::KwEnd}}});
                 }
                 break;
             }
@@ -381,8 +394,8 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
                     temp_i++;
                 }
 
-                tokens.insert(tokens.begin() + temp_i,
-                              (Token){.kind = TokenKind::Rparen});
+                addendum.insert({temp_i, vector<Token>{(Token){
+                                             .kind = TokenKind::Rparen}}});
 
                 break;
             }
