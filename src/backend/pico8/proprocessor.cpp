@@ -355,6 +355,7 @@ vector<Token> preprocessTokens(vector<Token> tokens) {
             case TokenKind::KwIf: {
                 // if (condition) then statement
                 // to if condition then statement end
+
                 output.push_back((Token){.kind = TokenKind::KwIf});
                 if (i + 1 < tokens.size() &&
                     tokens.at(i + 1).kind == TokenKind::Lparen) {

@@ -8,11 +8,15 @@
 
 using namespace std;
 
-char Lexer::peek(Lexer& lexer) { return lexer.rawLua.at(lexer.cursor); }
+char Lexer::peek(Lexer& lexer) {
+    if (lexer.cursor >= lexer.rawLua.length()) return '\0';
+    return lexer.rawLua.at(lexer.cursor);
+}
 
 char Lexer::peekNext(Lexer& lexer, int n) {
     // peek n digits forward
     // default n = 1
+    if (lexer.cursor >= lexer.rawLua.length()) return '\0';
     return lexer.rawLua.at(lexer.cursor + n);
 }
 
@@ -25,7 +29,7 @@ void Lexer::advance(Lexer& lexer, int n) {
 vector<Token> Lexer::tokenise(Lexer lexer) {
     vector<Token> tokenArr;
 
-    while (lexer.cursor != lexer.rawLua.length() - 1) {
+    while (lexer.cursor < lexer.rawLua.length()) {
         Token token;
 
         switch (peek(lexer)) {
@@ -65,17 +69,19 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                 lexer.cursor++;
                 int start = lexer.cursor;
 
-                while (peek(lexer) != quote) {
+                while (peek(lexer) != quote && peek(lexer) != '\0') {
                     if (peek(lexer) == '\\') {
                         lexer.cursor = lexer.cursor + 2;
+                    } else {
+                        advance(lexer);
                     }
-                    advance(lexer);
                 }
                 int length = lexer.cursor - start;
 
                 string str = lexer.rawLua.substr(start, length);
                 token.kind = TokenKind::Str;
                 token.str = str;
+                advance(lexer);
 
                 break;
             }
@@ -99,7 +105,8 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
 
                 int start = lexer.cursor;
 
-                while (isdigit(peek(lexer))) {
+                while (isdigit(peek(lexer)) || peek(lexer) == 'e' ||
+                       peek(lexer) == 'E' || peek(lexer) == '.') {
                     if (peek(lexer) == 'e') is_sci = true;
                     advance(lexer);
                 }
@@ -154,7 +161,7 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                            peekNext(lexer, 3) == '[')) {
                     // -- comments without [[
 
-                    while (peek(lexer) != '\n') {
+                    while (peek(lexer) != '\n' && peek(lexer) != '\0') {
                         advance(lexer);
                     }
                     advance(lexer);
@@ -166,10 +173,15 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                             peekNext(lexer, 3) == '[')) {
                     // -- comments with [[
                     advance(lexer, 3);
-                    while (!(peek(lexer) == ']' && peekNext(lexer) == ']')) {
+                    while (!(peek(lexer) == ']' && peekNext(lexer) == ']') &&
+                           peek(lexer) != '\0') {
                         advance(lexer);
                     }
-                    advance(lexer);
+
+                    if (peek(lexer) != '\0') {
+                        advance(lexer, 2);
+                    }
+
                 } else {
                     token.kind = TokenKind::Minus;
 
@@ -362,7 +374,7 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                 } else if (peekNext(lexer) == '>' &&
                            peekNext(lexer, 2) == '>') {
                     token.kind = TokenKind::ArithShiftRight;
-                    advance(lexer, 2);
+                    advance(lexer, 3);
                 } else if (peekNext(lexer) == '>' &&
                            !(peekNext(lexer, 2) == '>')) {
                     token.kind = TokenKind::ShiftRight;
@@ -423,9 +435,7 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
         tokenArr.push_back(token);
     }
 
-    if (lexer.cursor == lexer.rawLua.length() - 1) {
-        tokenArr.push_back((Token){.kind = TokenKind::End});
-    }
+    tokenArr.push_back((Token){.kind = TokenKind::End});
 
     return tokenArr;
 }
