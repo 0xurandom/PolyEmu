@@ -13,3 +13,7 @@ void EmuWindow::init() {
 int EmuWindow::getWidth() { return Width; }
 
 int EmuWindow::getHeight() { return Height; }
+
+int EmuWindow::getMenuBarWidth() { return menuBarWidth; }
+
+int EmuWindow::getMenubarHeight() { return menuBarHeight; }

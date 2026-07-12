@@ -7,6 +7,9 @@ class EmuWindow {
     int getWidth();
     int getHeight();
 
+    int getMenuBarWidth();
+    int getMenubarHeight();
+
     struct {
         bool fileEditMode = false;
         bool emulatorEditMode = false;
@@ -18,6 +21,9 @@ class EmuWindow {
    private:
     int Width = 854;
     int Height = 480;
+
+    int menuBarWidth = Width;
+    int menuBarHeight = 30;
 
     static constexpr char Header[] = "PolyEmu";
 

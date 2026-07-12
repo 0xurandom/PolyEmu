@@ -4,6 +4,7 @@
 #include <cctype>
 #include <iostream>
 #include <iterator>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -166,6 +167,8 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                     }
                     advance(lexer);
 
+                    continue;
+
                     // TODO: add support for --[==[ ]==]
 
                 } else if (peekNext(lexer) == '-' &&
@@ -181,6 +184,8 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                     if (peek(lexer) != '\0') {
                         advance(lexer, 2);
                     }
+
+                    continue;
 
                 } else {
                     token.kind = TokenKind::Minus;
@@ -257,10 +262,26 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             case '[': {
                 if (peekNext(lexer) == '[') {
                     // is multi line string literal
-                }
-                token.kind = TokenKind::Lbracket;
+                    advance(lexer, 3);
+                    if (peek(lexer) == '\n') advance(lexer);
 
-                advance(lexer);
+                    size_t temp_cursor = lexer.cursor;
+
+                    while (!(peek(lexer) == ']' && peekNext(lexer) == ']') &&
+                           peek(lexer) != '\0') {
+                        advance(lexer);
+                    }
+
+                    string multiString =
+                        rawLua.substr(temp_cursor, lexer.cursor - 1);
+                    advance(lexer, 2);
+                    token.kind = TokenKind::Str;
+                    token.str = multiString;
+
+                } else {
+                    token.kind = TokenKind::Lbracket;
+                    advance(lexer);
+                }
                 break;
             }
 

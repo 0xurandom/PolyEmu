@@ -9,8 +9,6 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-    cout << "hello world!\n";
-
     Pico8 pico8;
 
     Vector2 mouseCell = {0.0f, 0.0f};
