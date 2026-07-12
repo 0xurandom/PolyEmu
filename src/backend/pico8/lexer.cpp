@@ -17,7 +17,7 @@ char Lexer::peek(Lexer& lexer) {
 char Lexer::peekNext(Lexer& lexer, int n) {
     // peek n digits forward
     // default n = 1
-    if (lexer.cursor >= lexer.rawLua.length()) return '\0';
+    if (lexer.cursor + n >= lexer.rawLua.length()) return '\0';
     return lexer.rawLua.at(lexer.cursor + n);
 }
 
@@ -106,7 +106,7 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
 
                 int start = lexer.cursor;
 
-                while (isdigit(peek(lexer)) || peek(lexer) == 'e' ||
+                while (isalnum(peek(lexer)) || peek(lexer) == 'e' ||
                        peek(lexer) == 'E' || peek(lexer) == '.') {
                     if (peek(lexer) == 'e') is_sci = true;
                     advance(lexer);
@@ -136,6 +136,7 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
 
             case '\n': {
                 token.kind = TokenKind::Newline;
+                advance(lexer);
                 break;
             }
 
@@ -207,6 +208,18 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                 break;
             }
 
+            case '!': {
+                if (peekNext(lexer) == '=') {
+                    token.kind = TokenKind::NotEquals;
+                    advance(lexer, 2);
+                } else {
+                    cerr << "Error: Bang encountered by itself at: "
+                         << lexer.cursor << endl;
+                    exit(1);
+                }
+                break;
+            }
+
             case '/': {
                 if (peekNext(lexer) == '=') {
                     token.kind = TokenKind::SlashEquals;
@@ -262,7 +275,7 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             case '[': {
                 if (peekNext(lexer) == '[') {
                     // is multi line string literal
-                    advance(lexer, 3);
+                    advance(lexer, 2);
                     if (peek(lexer) == '\n') advance(lexer);
 
                     size_t temp_cursor = lexer.cursor;
@@ -272,9 +285,13 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                         advance(lexer);
                     }
 
-                    string multiString =
-                        rawLua.substr(temp_cursor, lexer.cursor - 1);
-                    advance(lexer, 2);
+                    string multiString = lexer.rawLua.substr(
+                        temp_cursor, lexer.cursor - temp_cursor);
+
+                    if (peek(lexer) != '0') {
+                        advance(lexer, 2);
+                    }
+
                     token.kind = TokenKind::Str;
                     token.str = multiString;
 
