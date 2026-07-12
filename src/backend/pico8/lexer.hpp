@@ -38,6 +38,7 @@ enum class TokenKind {
     SlashEquals,
     PercentEquals,
     CaretEquals,
+    XorEquals,
     DotDotEquals,
 
     NotEquals,      // ~= , !=
@@ -121,7 +122,7 @@ class Lexer {
         "or",       "repeat", "return", "then",   "true",  "until", "while",
     };
 
-    std::vector<Token> tokenise(Lexer lexer);
+    std::vector<Token> tokenise(Lexer *lexer);
 
     char peek(Lexer &lexer);
     char peekNext(Lexer &lexer, int n = 1);

@@ -27,35 +27,35 @@ void Lexer::advance(Lexer& lexer, int n) {
     lexer.cursor = lexer.cursor + n;
 }
 
-vector<Token> Lexer::tokenise(Lexer lexer) {
+vector<Token> Lexer::tokenise(Lexer* lexer) {
     vector<Token> tokenArr;
 
-    while (lexer.cursor < lexer.rawLua.length()) {
+    while (lexer->cursor < lexer->rawLua.length()) {
         Token token;
 
-        switch (peek(lexer)) {
+        switch (peek(*lexer)) {
             case 'a' ... 'z':
             case 'A' ... 'Z':
             case '_': {
-                int start = lexer.cursor;
+                int start = lexer->cursor;
 
-                while (isalnum(peek(lexer)) || peek(lexer) == '_') {
-                    advance(lexer);
+                while (isalnum(peek(*lexer)) || peek(*lexer) == '_') {
+                    advance(*lexer);
                 }
 
-                int length = lexer.cursor - start;
-                string word = lexer.rawLua.substr(start, length);
+                int length = lexer->cursor - start;
+                string word = lexer->rawLua.substr(start, length);
 
                 auto iter =
-                    find(lexer.idents.begin(), lexer.idents.end(), word);
+                    find(lexer->idents.begin(), lexer->idents.end(), word);
 
-                if (iter == lexer.idents.end()) {
+                if (iter == lexer->idents.end()) {
                     // an iden
                     token.kind = TokenKind::Iden;
                     token.str = word;
                 } else {
                     // a keyword
-                    int index = distance(lexer.idents.begin(), iter);
+                    int index = distance(lexer->idents.begin(), iter);
                     token.kind = static_cast<TokenKind>(
                         static_cast<int>(TokenKind::KwBreak) + index);
                 }
@@ -66,54 +66,281 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             // ' and "
             case '\'':
             case '\"': {
-                char quote = peek(lexer);
-                lexer.cursor++;
-                int start = lexer.cursor;
+                char quote = peek(*lexer);
+                lexer->cursor++;
+                int start = lexer->cursor;
 
-                while (peek(lexer) != quote && peek(lexer) != '\0') {
-                    if (peek(lexer) == '\\') {
-                        lexer.cursor = lexer.cursor + 2;
+                while (peek(*lexer) != quote && peek(*lexer) != '\0') {
+                    if (peek(*lexer) == '\\') {
+                        lexer->cursor = lexer->cursor + 2;
                     } else {
-                        advance(lexer);
+                        advance(*lexer);
                     }
                 }
-                int length = lexer.cursor - start;
+                int length = lexer->cursor - start;
 
-                string str = lexer.rawLua.substr(start, length);
+                string str = lexer->rawLua.substr(start, length);
                 token.kind = TokenKind::Str;
                 token.str = str;
-                advance(lexer);
+                if (peek(*lexer) != '\0') {
+                    advance(*lexer);
+                }
 
                 break;
             }
-                // TODO: handle string literals
 
-                // numbers:
-                // decimals, hexadecimals, binary, 1e2
-                // x.y, 0x, 0B/0b, 1.3e7
+            case ' ':
+            case '\t': {
+                advance(*lexer);
+                continue;
+            }
+
+            case '\n': {
+                token.kind = TokenKind::Newline;
+                advance(*lexer);
+                break;
+            }
+
+            case '+': {
+                if (peekNext(*lexer) == '=') {
+                    token.kind = TokenKind::PlusEquals;
+                    advance(*lexer, 2);
+                } else {
+                    token.kind = TokenKind::Plus;
+
+                    advance(*lexer);
+                }
+                break;
+            }
+
+            case '-': {
+                if (peekNext(*lexer) == '=') {
+                    token.kind = TokenKind::MinusEquals;
+                    advance(*lexer, 2);
+                }
+
+                else if (peekNext(*lexer) == '-' &&
+                         !(peekNext(*lexer, 2) == '[' &&
+                           peekNext(*lexer, 3) == '[')) {
+                    // -- comments without [[
+
+                    while (peek(*lexer) != '\n' && peek(*lexer) != '\0') {
+                        advance(*lexer);
+                    }
+
+                    continue;
+
+                    // TODO: add support for --[==[ ]==]
+
+                } else if (peekNext(*lexer) == '-' &&
+                           (peekNext(*lexer, 2) == '[' &&
+                            peekNext(*lexer, 3) == '[')) {
+                    // -- comments with [[
+                    advance(*lexer, 4);
+
+                    while (!(peek(*lexer) == ']' && peekNext(*lexer) == ']') &&
+                           peek(*lexer) != '\0') {
+                        advance(*lexer);
+                    }
+
+                    if (peek(*lexer) != '\0') {
+                        advance(*lexer, 2);
+                    }
+
+                    continue;
+
+                } else {
+                    token.kind = TokenKind::Minus;
+
+                    advance(*lexer);
+                }
+                break;
+            }
+
+            case '*': {
+                if (peekNext(*lexer) == '=') {
+                    token.kind = TokenKind::AsteriskEquals;
+                    advance(*lexer, 2);
+                } else {
+                    token.kind = TokenKind::Asterisk;
+
+                    advance(*lexer);
+                }
+                break;
+            }
+
+            case '!': {
+                if (peekNext(*lexer) == '=') {
+                    token.kind = TokenKind::NotEquals;
+                    advance(*lexer, 2);
+                } else {
+                    cerr << "Warning: Bang encountered by itself at: "
+                         << lexer->cursor << endl;
+                    advance(*lexer);
+                }
+                break;
+            }
+
+            case '/': {
+                if (peekNext(*lexer) == '=') {
+                    token.kind = TokenKind::SlashEquals;
+                    advance(*lexer, 2);
+                } else {
+                    token.kind = TokenKind::Slash;
+
+                    advance(*lexer);
+                }
+                break;
+            }
+
+            case '%': {
+                if (peekNext(*lexer) == '=') {
+                    token.kind = TokenKind::PercentEquals;
+                    advance(*lexer, 2);
+                } else {
+                    token.kind = TokenKind::Percent;
+
+                    advance(*lexer);
+                }
+                break;
+            }
+
+            case '(': {
+                token.kind = TokenKind::Lparen;
+
+                advance(*lexer);
+                break;
+            }
+
+            case ')': {
+                token.kind = TokenKind::Rparen;
+
+                advance(*lexer);
+                break;
+            }
+
+            case '{': {
+                token.kind = TokenKind::Lbrace;
+
+                advance(*lexer);
+                break;
+            }
+
+            case '}': {
+                token.kind = TokenKind::Rbrace;
+
+                advance(*lexer);
+                break;
+            }
+
+            case '[': {
+                if (peekNext(*lexer) == '[') {
+                    // is multi line string literal
+                    advance(*lexer, 2);
+                    if (peek(*lexer) == '\n') advance(*lexer);
+
+                    size_t temp_cursor = lexer->cursor;
+
+                    while (!(peek(*lexer) == ']' && peekNext(*lexer) == ']') &&
+                           peek(*lexer) != '\0') {
+                        advance(*lexer);
+                    }
+
+                    string multiString = lexer->rawLua.substr(
+                        temp_cursor, lexer->cursor - temp_cursor);
+
+                    if (peek(*lexer) != '\0') {
+                        advance(*lexer, 2);
+                    }
+
+                    token.kind = TokenKind::Str;
+                    token.str = multiString;
+
+                } else {
+                    token.kind = TokenKind::Lbracket;
+                    advance(*lexer);
+                }
+                break;
+            }
+
+            case ']': {
+                token.kind = TokenKind::Rbracket;
+
+                advance(*lexer);
+                break;
+            }
+
+            case ';': {
+                token.kind = TokenKind::Semicolon;
+
+                advance(*lexer);
+                break;
+            }
+
+            case ':': {
+                if (peekNext(*lexer) == ':') {
+                    token.kind = TokenKind::DoubleColon;
+                    advance(*lexer, 2);
+                } else {
+                    token.kind = TokenKind::Colon;
+
+                    advance(*lexer);
+                }
+                break;
+            }
+
+            case ',': {
+                token.kind = TokenKind::Comma;
+
+                advance(*lexer);
+                break;
+            }
+
+            case '.': {
+                if (isdigit(peekNext(*lexer))) {
+                    // fallthrough to next case
+                } else if (peekNext(*lexer) != '.') {
+                    token.kind = TokenKind::Dot;
+                    advance(*lexer);
+                    break;
+                } else if (peekNext(*lexer, 2) == '.') {
+                    token.kind = TokenKind::DotDotDot;
+                    advance(*lexer, 3);
+                    break;
+                } else if (peekNext(*lexer, 2) == '=') {
+                    token.kind = TokenKind::DotDotEquals;
+                    advance(*lexer, 3);
+                    break;
+                } else {
+                    token.kind = TokenKind::DotDot;
+                    advance(*lexer, 2);
+                    break;
+                }
+            }
 
             case '0' ... '9': {
                 bool is_sci = false;
                 bool is_hex = false;
                 bool is_bin = false;
 
-                if (peek(lexer) == '0' && peekNext(lexer) == 'x') {
+                if (peek(*lexer) == '0' && peekNext(*lexer) == 'x') {
                     is_hex = true;
-                } else if (peek(lexer) == '0' &&
-                           (peekNext(lexer) == 'b' || peekNext(lexer) == 'B')) {
+                } else if (peek(*lexer) == '0' && (peekNext(*lexer) == 'b' ||
+                                                   peekNext(*lexer) == 'B')) {
                     is_bin = true;
                 }
 
-                int start = lexer.cursor;
+                int start = lexer->cursor;
 
-                while (isalnum(peek(lexer)) || peek(lexer) == 'e' ||
-                       peek(lexer) == 'E' || peek(lexer) == '.') {
-                    if (peek(lexer) == 'e') is_sci = true;
-                    advance(lexer);
+                while (isalnum(peek(*lexer)) || peek(*lexer) == '.' ||
+                       peek(*lexer) == '-') {
+                    if (peek(*lexer) == 'e' || peek(*lexer) == 'E')
+                        is_sci = true;
+                    advance(*lexer);
                 }
 
-                int length = lexer.cursor - start;
-                string num = lexer.rawLua.substr(start, length);
+                int length = lexer->cursor - start;
+                string num = lexer->rawLua.substr(start, length);
                 token.str = num;
 
                 if (is_hex)
@@ -128,257 +355,40 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
                 break;
             }
 
-            case ' ':
-            case '\t': {
-                advance(lexer);
-                continue;
-            }
-
-            case '\n': {
-                token.kind = TokenKind::Newline;
-                advance(lexer);
-                break;
-            }
-
-            case '+': {
-                if (peekNext(lexer) == '=') {
-                    token.kind = TokenKind::PlusEquals;
-                    advance(lexer, 2);
-                } else {
-                    token.kind = TokenKind::Plus;
-
-                    advance(lexer);
-                }
-                break;
-            }
-
-            case '-': {
-                if (peekNext(lexer) == '=') {
-                    token.kind = TokenKind::MinusEquals;
-                    advance(lexer);
-                }
-
-                else if (peekNext(lexer) == '-' &&
-                         !(peekNext(lexer, 2) == '[' &&
-                           peekNext(lexer, 3) == '[')) {
-                    // -- comments without [[
-
-                    while (peek(lexer) != '\n' && peek(lexer) != '\0') {
-                        advance(lexer);
-                    }
-                    advance(lexer);
-
-                    continue;
-
-                    // TODO: add support for --[==[ ]==]
-
-                } else if (peekNext(lexer) == '-' &&
-                           (peekNext(lexer, 2) == '[' &&
-                            peekNext(lexer, 3) == '[')) {
-                    // -- comments with [[
-                    advance(lexer, 3);
-                    while (!(peek(lexer) == ']' && peekNext(lexer) == ']') &&
-                           peek(lexer) != '\0') {
-                        advance(lexer);
-                    }
-
-                    if (peek(lexer) != '\0') {
-                        advance(lexer, 2);
-                    }
-
-                    continue;
-
-                } else {
-                    token.kind = TokenKind::Minus;
-
-                    advance(lexer);
-                }
-                break;
-            }
-
-            case '*': {
-                if (peekNext(lexer) == '=') {
-                    token.kind = TokenKind::AsteriskEquals;
-                    advance(lexer, 2);
-                } else {
-                    token.kind = TokenKind::Asterisk;
-
-                    advance(lexer);
-                }
-                break;
-            }
-
-            case '!': {
-                if (peekNext(lexer) == '=') {
-                    token.kind = TokenKind::NotEquals;
-                    advance(lexer, 2);
-                } else {
-                    cerr << "Error: Bang encountered by itself at: "
-                         << lexer.cursor << endl;
-                    exit(1);
-                }
-                break;
-            }
-
-            case '/': {
-                if (peekNext(lexer) == '=') {
-                    token.kind = TokenKind::SlashEquals;
-                    advance(lexer, 2);
-                } else {
-                    token.kind = TokenKind::Slash;
-
-                    advance(lexer);
-                }
-                break;
-            }
-
-            case '%': {
-                if (peekNext(lexer) == '=') {
-                    token.kind = TokenKind::PercentEquals;
-                    advance(lexer, 2);
-                } else {
-                    token.kind = TokenKind::Percent;
-
-                    advance(lexer);
-                }
-                break;
-            }
-
-            case '(': {
-                token.kind = TokenKind::Lparen;
-
-                advance(lexer);
-                break;
-            }
-
-            case ')': {
-                token.kind = TokenKind::Rparen;
-
-                advance(lexer);
-                break;
-            }
-
-            case '{': {
-                token.kind = TokenKind::Lbrace;
-
-                advance(lexer);
-                break;
-            }
-
-            case '}': {
-                token.kind = TokenKind::Rbrace;
-
-                advance(lexer);
-                break;
-            }
-
-            case '[': {
-                if (peekNext(lexer) == '[') {
-                    // is multi line string literal
-                    advance(lexer, 2);
-                    if (peek(lexer) == '\n') advance(lexer);
-
-                    size_t temp_cursor = lexer.cursor;
-
-                    while (!(peek(lexer) == ']' && peekNext(lexer) == ']') &&
-                           peek(lexer) != '\0') {
-                        advance(lexer);
-                    }
-
-                    string multiString = lexer.rawLua.substr(
-                        temp_cursor, lexer.cursor - temp_cursor);
-
-                    if (peek(lexer) != '0') {
-                        advance(lexer, 2);
-                    }
-
-                    token.kind = TokenKind::Str;
-                    token.str = multiString;
-
-                } else {
-                    token.kind = TokenKind::Lbracket;
-                    advance(lexer);
-                }
-                break;
-            }
-
-            case ']': {
-                token.kind = TokenKind::Rbracket;
-
-                advance(lexer);
-                break;
-            }
-
-            case ';': {
-                token.kind = TokenKind::Semicolon;
-
-                advance(lexer);
-                break;
-            }
-
-            case ':': {
-                if (peekNext(lexer) == ':') {
-                    token.kind = TokenKind::DoubleColon;
-                    advance(lexer, 2);
-                } else {
-                    token.kind = TokenKind::Colon;
-
-                    advance(lexer);
-                }
-                break;
-            }
-
-            case ',': {
-                token.kind = TokenKind::Comma;
-
-                advance(lexer);
-                break;
-            }
-
-            case '.': {
-                if (peekNext(lexer) != '.') {
-                    token.kind = TokenKind::Dot;
-                    advance(lexer);
-                } else if (peekNext(lexer, 2) == '.') {
-                    token.kind = TokenKind::DotDotDot;
-                    advance(lexer, 3);
-                } else if (peekNext(lexer, 2) == '=') {
-                    token.kind = TokenKind::DotDotEquals;
-                    advance(lexer, 3);
-                } else {
-                    token.kind = TokenKind::DotDot;
-                    advance(lexer, 2);
-                }
-
-                break;
-            }
-
             case '?': {
                 token.kind = TokenKind::Question;
-                advance(lexer);
+                advance(*lexer);
                 break;
             }
 
             case '=': {
-                if (peekNext(lexer) == '=') {
+                if (peekNext(*lexer) == '=') {
                     token.kind = TokenKind::EqualsEquals;
-                    advance(lexer, 2);
+                    advance(*lexer, 2);
                 } else {
                     token.kind = TokenKind::Equals;
 
-                    advance(lexer);
+                    advance(*lexer);
                 }
                 break;
             }
 
             case '^': {
-                if (peekNext(lexer) == '=') {
+                if (peekNext(*lexer) == '^') {
+                    if (peekNext(*lexer, 2) == '=') {
+                        token.kind = TokenKind::XorEquals;
+                        advance(*lexer, 3);
+                    } else {
+                        token.kind = TokenKind::BitwiseXor;
+                        advance(*lexer, 2);
+                    }
+                } else if (peekNext(*lexer) == '=') {
                     token.kind = TokenKind::CaretEquals;
-                    advance(lexer, 2);
+                    advance(*lexer, 2);
                 } else {
                     token.kind = TokenKind::Caret;
 
-                    advance(lexer);
+                    advance(*lexer);
                 }
                 break;
             }
@@ -386,52 +396,52 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             case '#': {
                 token.kind = TokenKind::Hash;
 
-                advance(lexer);
+                advance(*lexer);
                 break;
             }
 
             case '<': {
-                if (peekNext(lexer) == '=') {
+                if (peekNext(*lexer) == '=') {
                     token.kind = TokenKind::LessEquals;
-                    advance(lexer, 2);
-                } else if (peekNext(lexer) == '<') {
+                    advance(*lexer, 2);
+                } else if (peekNext(*lexer) == '<') {
                     token.kind = TokenKind::ShiftLeft;
-                    advance(lexer, 2);
+                    advance(*lexer, 2);
                 } else {
                     token.kind = TokenKind::Less;
 
-                    advance(lexer);
+                    advance(*lexer);
                 }
                 break;
             }
 
             case '>': {
-                if (peekNext(lexer) == '=') {
+                if (peekNext(*lexer) == '=') {
                     token.kind = TokenKind::GreaterEquals;
-                    advance(lexer, 2);
-                } else if (peekNext(lexer) == '>' &&
-                           peekNext(lexer, 2) == '>') {
+                    advance(*lexer, 2);
+                } else if (peekNext(*lexer) == '>' &&
+                           peekNext(*lexer, 2) == '>') {
                     token.kind = TokenKind::ArithShiftRight;
-                    advance(lexer, 3);
-                } else if (peekNext(lexer) == '>' &&
-                           !(peekNext(lexer, 2) == '>')) {
+                    advance(*lexer, 3);
+                } else if (peekNext(*lexer) == '>' &&
+                           !(peekNext(*lexer, 2) == '>')) {
                     token.kind = TokenKind::ShiftRight;
-                    advance(lexer, 2);
+                    advance(*lexer, 2);
                 } else {
                     token.kind = TokenKind::Greater;
-                    advance(lexer);
+                    advance(*lexer);
                 }
                 break;
             }
 
             case '\\': {
-                if (peekNext(lexer) == '=') {
+                if (peekNext(*lexer) == '=') {
                     token.kind = TokenKind::IntDiveEquals;
-                    advance(lexer, 2);
+                    advance(*lexer, 2);
                 } else {
                     token.kind = TokenKind::IntegerDivide;
 
-                    advance(lexer);
+                    advance(*lexer);
                 }
                 break;
             }
@@ -439,33 +449,33 @@ vector<Token> Lexer::tokenise(Lexer lexer) {
             case '&': {
                 token.kind = TokenKind::BitwiseAnd;
 
-                advance(lexer);
+                advance(*lexer);
                 break;
             }
 
             case '|': {
                 token.kind = TokenKind::BitwiseOr;
 
-                advance(lexer);
+                advance(*lexer);
                 break;
             }
 
             case '~': {
-                if (peekNext(lexer) == '=') {
+                if (peekNext(*lexer) == '=') {
                     token.kind = TokenKind::NotEquals;
-                    advance(lexer, 2);
+                    advance(*lexer, 2);
                 } else {
                     token.kind = TokenKind::BitwiseNot;
 
-                    advance(lexer);
+                    advance(*lexer);
                 }
                 break;
             }
 
             default: {
                 cerr << "Warning: Unexpected character passed to lexer:" << '\"'
-                     << peek(lexer) << '\"' << '\n';
-                advance(lexer);
+                     << peek(*lexer) << '\"' << '\n';
+                advance(*lexer);
                 continue;
             }
         }
