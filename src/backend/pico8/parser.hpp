@@ -14,6 +14,29 @@ enum class NodeKind {
     VarArg,
     Iden,
 
+    BinaryOp,
+    UnaryOp,
+    Call,
+    Index,
+    FieldAccess,
+    TableConstructor,
+    FunctionExpr,
+
+    Block,
+    Assign,
+    LocalAssign,
+    CompoundAssign,
+    If,
+    While,
+    NumericFor,
+    GenericFor,
+    RepeatUntil,
+    FunctionDecl,
+    Return,
+    Break,
+    Goto,
+    Label,
+    ExprStmt,
 };
 
 struct Node;
@@ -35,6 +58,11 @@ class Parser {
     Node Parse();
 
    private:
-       std::vector<Token> tokens;
-       size_t cursor;
-}
+    std::vector<Token> tokens;
+    size_t cursor;
+
+    const Token& peek(int n = 0);
+    void advance(int n = 1);
+    bool check(TokenKind kind);
+    bool consume(TokenKind kind);
+};
