@@ -1,6 +1,8 @@
 #include <cmath>
 #include <cstdint>
 
+#include "api.hpp"
+
 // fixed pt integers go from
 // -32768.0 to 32767.99
 
@@ -60,7 +62,7 @@ int32_t p_lshr(int32_t n, int32_t bits) {
     return static_cast<uint32_t>(bits) >> shift;
 }
 
-int32_t p_max(int32_t x, int32_t y = 0) {
+int32_t p_max(int32_t x, int32_t y) {
     if (x > y)
         return x;
     else
@@ -77,7 +79,7 @@ int32_t p_mid(int32_t x, int32_t y, int32_t z) {
         return x;
 }
 
-int32_t p_min(int32_t x, int32_t y = 0) {
+int32_t p_min(int32_t x, int32_t y) {
     if (x < y)
         return x;
     else
