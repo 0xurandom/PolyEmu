@@ -1,5 +1,6 @@
 #pragma once
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,9 +35,31 @@ enum class NodeKind {
     FunctionDecl,
     Return,
     Break,
-    Goto,
     Label,
     ExprStmt,
+};
+
+enum class Precedence {
+    None,
+    Assignment,
+
+    LogicalOr,
+    LogicalAnd,
+    Equality,
+    Comparison,
+
+    BitwiseOr,
+    BitwiseXor,
+    BitwiseAnd,
+    BitwiseShift,
+
+    Concat,
+    Term,
+    Factor,
+    Unary,
+    Exponent,
+    Call,
+    Primary,
 };
 
 struct Node;
@@ -55,14 +78,27 @@ struct Node {
 
 class Parser {
    public:
-    Node Parse();
+    NodePtr Parse();
 
    private:
     std::vector<Token> tokens;
     size_t cursor;
 
+    NodePtr parseBlock(std::initializer_list<TokenKind> terminators);
+    NodePtr parseStatement();
+    NodePtr parseExpression();
+
+    NodePtr parseIf();
+
+    NodePtr parseNumber(Token token);
+    NodePtr parseIden(Token token);
+    NodePtr parseParenExpr(Token token);
+    NodePtr parseUnaryMinus(Token token);
+
     const Token& peek(int n = 0);
     void advance(int n = 1);
     bool check(TokenKind kind);
     bool consume(TokenKind kind);
+
+    void consumeNewlines();
 };
