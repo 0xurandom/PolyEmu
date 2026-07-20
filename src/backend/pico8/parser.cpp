@@ -1,5 +1,6 @@
 #include "parser.hpp"
 
+#include <iostream>
 #include <memory>
 
 using namespace std;
@@ -34,9 +35,34 @@ NodePtr Parser::parseBlock(initializer_list<TokenKind> terminators) {
     return block;
 }
 
-NodePtr Parser::parseStatement() {}
+NodePtr Parser::parseStatement() {
+    Token token = tokens.at(cursor);
 
-NodePtr Parser::parseExpression() {}
+    if (check(TokenKind::KwIf)) return parseIf();
+}
+
+NodePtr Parser::parseExpression(Token token) {
+    switch (token.kind) {
+        case TokenKind::BinNum:
+        case TokenKind::DecNum:
+        case TokenKind::HexNum:
+        case TokenKind::SciNum:
+            return parseNumber(token);
+
+        case TokenKind::Iden:
+            return parseIden(token);
+
+        case TokenKind::Minus:
+            return parseUnaryMinus(token);
+
+        case TokenKind::Lparen:
+            return parseParenExpr(token);
+
+        default: {
+            cerr << "Error: Unexpected expression token\n";
+        }
+    }
+}
 
 NodePtr Parser::parseIf() {}
 
@@ -53,7 +79,7 @@ NodePtr Parser::parseIden(Token token) {
 }
 
 NodePtr Parser::parseParenExpr(Token token) {
-    NodePtr innerExpr = parseExpression();
+    NodePtr innerExpr = parseStatement();
 
     consume(TokenKind::Rparen);
 
@@ -64,8 +90,32 @@ NodePtr Parser::parseUnaryMinus(Token token) {
     auto node = make_unique<Node>(NodeKind::UnaryOp);
     node->opKind = TokenKind::Minus;
 
-    node->children.push_back(parseExpression());
+    node->children.push_back(parseStatement());
     return node;
+}
+
+NodePtr Parser::parseBinaryOp(NodePtr node, Token op) {
+    auto newNode = make_unique<Node>(NodeKind::BinaryOp);
+    newNode->opKind = op.kind;
+
+    newNode->children.push_back(std::move(node));
+}
+
+Precedence Parser::getPrecedence(TokenKind kind) {
+    switch (kind) {
+        case TokenKind::Equals:
+            return Precedence::Assignment;
+
+        case TokenKind::EqualsEquals:
+        case TokenKind::NotEquals:
+            return Precedence::Equality;
+
+        case TokenKind::Less:
+        case TokenKind::Greater:
+        case TokenKind::LessEquals:
+        case TokenKind::GreaterEquals:
+            return Precedence::Comparison;
+    }
 }
 
 const Token& Parser::peek(int n) { return tokens.at(cursor + n); }

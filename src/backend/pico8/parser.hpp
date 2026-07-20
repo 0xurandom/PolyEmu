@@ -84,9 +84,11 @@ class Parser {
     std::vector<Token> tokens;
     size_t cursor;
 
+    Precedence getPrecedence(TokenKind kind);
+
     NodePtr parseBlock(std::initializer_list<TokenKind> terminators);
     NodePtr parseStatement();
-    NodePtr parseExpression();
+    NodePtr parseExpression(Token token);
 
     NodePtr parseIf();
 
@@ -94,6 +96,7 @@ class Parser {
     NodePtr parseIden(Token token);
     NodePtr parseParenExpr(Token token);
     NodePtr parseUnaryMinus(Token token);
+    NodePtr parseBinaryOp(NodePtr node, Token op);
 
     const Token& peek(int n = 0);
     void advance(int n = 1);
