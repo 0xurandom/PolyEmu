@@ -18,6 +18,9 @@ struct Opcode {
 class Chip8 : public EmuBackend {
    public:
    private:
+    const int displayWidth = 64;
+    const int displayHeight = 32;
+
     // display
     uint8_t display[64 * 32] = {0};
 
@@ -46,6 +49,7 @@ class Chip8 : public EmuBackend {
     void handleOpcode(Opcode opcode);
 
     void clearScreen();
+    void draw(Opcode opcode);
     void setVarRegister(Opcode opcode);
     void addValToRegister(Opcode opcode);
     void setIndex(Opcode opcode);
