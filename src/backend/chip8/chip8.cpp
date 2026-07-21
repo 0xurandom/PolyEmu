@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <cstring>
+#include <fstream>
+#include <ios>
 #include <iostream>
 
 Opcode Chip8::getOpcode() {
@@ -11,6 +13,29 @@ Opcode Chip8::getOpcode() {
     pc += 2;
 
     return opcode;
+}
+
+bool Chip8::loadROM(const std::string &filepath) {
+    const unsigned int startAddr = 0x200;
+    const std::streamsize maxSize = sizeof(ram) - startAddr;
+
+    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
+
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open ROM" << std::endl;
+        return false;
+    }
+
+    if (file.tellg() > maxSize) {
+        std::cerr << "Error: ROM size is larger than can be allocated in ram"
+                  << std::endl;
+        return false;
+    }
+
+    if (!file.read(reinterpret_cast<char *>(&ram[startAddr]), file.tellg()))
+        return false;
+    else
+        return true;
 }
 
 // void Pico8::handleOpcode(Opcode opcode) { switch () };
