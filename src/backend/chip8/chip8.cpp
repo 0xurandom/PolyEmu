@@ -1,5 +1,6 @@
 #include "chip8.hpp"
 
+#include <climits>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -103,7 +104,7 @@ void Chip8::handleOpcode(Opcode opcode) {
 
         // 7XNN
         case 0x7: {
-            addValToRegister(opcode);
+            addValToRegister(opcode, NULL);
             break;
         }
 
@@ -118,6 +119,57 @@ void Chip8::handleOpcode(Opcode opcode) {
                 case 0x1: {
                     // 8XY1
                     binaryOr(opcode);
+                    break;
+                }
+
+                case 0x2: {
+                    // 0XY2
+                    binaryAnd(opcode);
+                    break;
+                }
+
+                case 0x3: {
+                    // 0XY3
+                    binaryXor(opcode);
+                    break;
+                }
+
+                case 0x4: {
+                    // 0XY4
+                    bool overflow;
+                    addValToRegister(opcode, &overflow);
+
+                    if (overflow)
+                        V[15] = 1;
+                    else
+                        V[15] = 0;
+
+                    break;
+                }
+
+                case 0x5: {
+                    // 0XY5
+                    bool underflow;
+                    subtractYfromX(opcode, &underflow);
+
+                    if (underflow)
+                        V[15] = 1;
+                    else
+                        V[15] = 0;
+
+                    break;
+                }
+
+                case 0x7: {
+                    // 0XY7
+                    bool underflow;
+                    subtractXfromY(opcode, &underflow);
+
+                    if (underflow)
+                        V[15] = 1;
+                    else
+                        V[15] = 0;
+
                     break;
                 }
             }
@@ -171,11 +223,19 @@ void Chip8::setVarRegister(Opcode opcode) {
     V[opcode.X] = opcode.NN;
 }
 
-void Chip8::addValToRegister(Opcode opcode) {
+void Chip8::addValToRegister(Opcode opcode, bool *overflow) {
+    // TODO: move this error after fetching opcode
     if (opcode.X < 0 || opcode.X > 15) {
         std::cerr << "Error: addValToRegister received invalid register num"
                   << std::endl;
     }
+
+    int result = V[opcode.X] + opcode.NN;
+
+    if (result > 255)
+        *overflow = true;
+    else
+        *overflow = false;
 
     V[opcode.X] += opcode.NN;
 }
@@ -185,6 +245,32 @@ void Chip8::setVXtoVY(Opcode opcode) { V[opcode.X] = V[opcode.Y]; }
 void Chip8::setIndex(Opcode opcode) { I = opcode.NNN; }
 
 void Chip8::binaryOr(Opcode opcode) { V[opcode.X] = V[opcode.X] | V[opcode.Y]; }
+
+void Chip8::binaryAnd(Opcode opcode) {
+    V[opcode.X] = V[opcode.X] & V[opcode.Y];
+}
+
+void Chip8::binaryXor(Opcode opcode) {
+    V[opcode.X] = V[opcode.X] ^ V[opcode.Y];
+}
+
+void Chip8::subtractYfromX(Opcode opcode, bool *underflow) {
+    if (V[opcode.X] > V[opcode.Y])
+        *underflow = true;
+    else
+        *underflow = false;
+
+    V[opcode.X] = V[opcode.X] - V[opcode.Y];
+}
+
+void Chip8::subtractXfromY(Opcode opcode, bool *underflow) {
+    if (V[opcode.Y] > V[opcode.X])
+        *underflow = true;
+    else
+        *underflow = false;
+
+    V[opcode.X] = V[opcode.Y] - V[opcode.X];
+}
 
 void Chip8::skipInstruction() { pc += 2; }
 

@@ -55,9 +55,13 @@ class Chip8 : public EmuBackend {
     void clearScreen();
     void draw(Opcode opcode);
     void setVarRegister(Opcode opcode);
-    void addValToRegister(Opcode opcode);
+    void addValToRegister(Opcode opcode, bool *overflow);
     void setVXtoVY(Opcode opcode);
     void binaryOr(Opcode opcode);
+    void binaryAnd(Opcode opcode);
+    void binaryXor(Opcode opcode);
+    void subtractYfromX(Opcode opcode, bool *underflow);
+    void subtractXfromY(Opcode opcode, bool *underflow);
     void skipInstruction();
     void setIndex(Opcode opcode);
     void jump(Opcode opcode);
