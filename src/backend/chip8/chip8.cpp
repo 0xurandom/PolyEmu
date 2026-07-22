@@ -38,7 +38,94 @@ bool Chip8::loadROM(const std::string &filepath) {
         return true;
 }
 
-// void Pico8::handleOpcode(Opcode opcode) { switch () };
+void Chip8::handleOpcode(Opcode opcode) {
+    uint16_t firstNibble = (opcode.code & 0xF000) >> 12;
+
+    switch (firstNibble) {
+        case 0x0: {
+            switch (opcode.NN) {
+                case 0xE0:
+                    clearScreen();
+                    break;
+                case 0xEE:  // TODO subroutine
+
+                default: {
+                    std::cerr << "Error: Unknown opcode starting with 0x0"
+                              << std::endl;
+                    break;
+                }
+            }
+
+            break;
+        }
+
+        // 1NNN
+        case 0x1: {
+            jump(opcode);
+            break;
+        }
+
+        // 2NNN
+        case 0x2: {
+            // TODO
+            break;
+        }
+
+        // 3XNN
+        case 0x3: {
+            if (V[opcode.X] == opcode.NN) skipInstruction();
+            break;
+        }
+
+        // 4XNN
+        case 0x4: {
+            if (V[opcode.X] != opcode.NN) skipInstruction();
+            break;
+        }
+
+        // 5XY0
+        case 0x5: {
+            if (V[opcode.X] == V[opcode.Y]) skipInstruction();
+            break;
+        }
+
+        // 9XY0
+        case 0x9: {
+            if (V[opcode.X] != V[opcode.Y]) skipInstruction();
+            break;
+        }
+
+        // 6XNN
+        case 0x6: {
+            setVarRegister(opcode);
+            break;
+        }
+
+        // 7XNN
+        case 0x7: {
+            addValToRegister(opcode);
+            break;
+        }
+
+        case 0x8: {
+            switch (opcode.N) {
+                case 0x0: {
+                    // 8XY0
+                    setVXtoVY(opcode);
+                    break;
+                }
+
+                case 0x1: {
+                    // 8XY1
+                    binaryOr(opcode);
+                    break;
+                }
+            }
+
+            break;
+        }
+    }
+}
 
 void Chip8::draw(Opcode opcode) {
     uint8_t VX = V[opcode.X];
@@ -93,6 +180,12 @@ void Chip8::addValToRegister(Opcode opcode) {
     V[opcode.X] += opcode.NN;
 }
 
+void Chip8::setVXtoVY(Opcode opcode) { V[opcode.X] = V[opcode.Y]; }
+
 void Chip8::setIndex(Opcode opcode) { I = opcode.NNN; }
+
+void Chip8::binaryOr(Opcode opcode) { V[opcode.X] = V[opcode.X] | V[opcode.Y]; }
+
+void Chip8::skipInstruction() { pc += 2; }
 
 void Chip8::jump(Opcode opcode) { pc = opcode.NNN; }

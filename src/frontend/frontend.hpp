@@ -1,9 +1,13 @@
 #pragma once
 
 #include <raylib.h>
+
+#include <vector>
 class EmuWindow {
    public:
     void init();
+    void initDisplay();
+
     int getWidth();
     int getHeight();
 
@@ -19,8 +23,10 @@ class EmuWindow {
     } menuBar;
 
    private:
-    int Width = 854;
-    int Height = 480;
+    int Width = 64;
+    int Height = 32;
+
+    int scale = 6;
 
     int menuBarWidth = Width;
     int menuBarHeight = 30;
@@ -28,4 +34,7 @@ class EmuWindow {
     static constexpr char Header[] = "PolyEmu";
 
     int targetFPS = 60;
+
+    std::vector<Color> pixelBuffer;
+    Texture2D displayTexture[];
 };

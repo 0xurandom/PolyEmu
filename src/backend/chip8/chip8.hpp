@@ -17,13 +17,16 @@ struct Opcode {
 
 class Chip8 : public EmuBackend {
    public:
-    Chip8() : EmuBackend(64, 32) {}
-
     bool loadROM(const std::string &filepath) override;
+
+    static constexpr int displayWidth = 64;
+    static constexpr int displayHeight = 32;
+    int getDisplayWidth() const override { return displayWidth; }
+    int getDisplayHeight() const override { return displayHeight; }
 
    private:
     // display
-    uint8_t display[64 * 32] = {0};
+    uint8_t display[displayWidth * displayHeight] = {0};
 
     // 4kb ram
     uint8_t ram[4096] = {0};
@@ -53,6 +56,9 @@ class Chip8 : public EmuBackend {
     void draw(Opcode opcode);
     void setVarRegister(Opcode opcode);
     void addValToRegister(Opcode opcode);
+    void setVXtoVY(Opcode opcode);
+    void binaryOr(Opcode opcode);
+    void skipInstruction();
     void setIndex(Opcode opcode);
     void jump(Opcode opcode);
 };
