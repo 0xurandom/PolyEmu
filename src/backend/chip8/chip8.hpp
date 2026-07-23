@@ -62,7 +62,11 @@ class Chip8 : public EmuBackend {
     void binaryXor(Opcode opcode);
     void subtractYfromX(Opcode opcode, bool *underflow);
     void subtractXfromY(Opcode opcode, bool *underflow);
+    void shiftRight(Opcode opcode, uint8_t *shiftedBit);
+    void shiftLeft(Opcode opcode, uint8_t *shiftedBit);
     void skipInstruction();
     void setIndex(Opcode opcode);
     void jump(Opcode opcode);
+    void jumpWithOffset(Opcode opcode);
+    void randomNum(Opcode opcode);
 };

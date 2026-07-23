@@ -6,6 +6,7 @@
 #include <fstream>
 #include <ios>
 #include <iostream>
+#include <random>
 
 Opcode Chip8::getOpcode() {
     Opcode opcode = {.code =
@@ -139,10 +140,7 @@ void Chip8::handleOpcode(Opcode opcode) {
                     bool overflow;
                     addValToRegister(opcode, &overflow);
 
-                    if (overflow)
-                        V[15] = 1;
-                    else
-                        V[15] = 0;
+                    V[15] = overflow;
 
                     break;
                 }
@@ -152,10 +150,7 @@ void Chip8::handleOpcode(Opcode opcode) {
                     bool underflow;
                     subtractYfromX(opcode, &underflow);
 
-                    if (underflow)
-                        V[15] = 1;
-                    else
-                        V[15] = 0;
+                    V[15] = underflow;
 
                     break;
                 }
@@ -165,11 +160,64 @@ void Chip8::handleOpcode(Opcode opcode) {
                     bool underflow;
                     subtractXfromY(opcode, &underflow);
 
-                    if (underflow)
-                        V[15] = 1;
-                    else
-                        V[15] = 0;
+                    V[15] = underflow;
 
+                    break;
+                }
+
+                case 0x6: {
+                    // 8XY6
+                    uint8_t shiftedBit;
+                    shiftRight(opcode, &shiftedBit);
+
+                    V[15] = shiftedBit;
+                }
+
+                case 0xE: {
+                    // 8XYE
+
+                    uint8_t shiftedBit;
+                    shiftLeft(opcode, &shiftedBit);
+
+                    V[15] = shiftedBit;
+                }
+            }
+
+            break;
+        }
+
+        // ANNN
+        case 0xA: {
+            setIndex(opcode);
+            break;
+        }
+
+        // BNNN
+        case 0xB: {
+            // TODO: add configurable BXNN
+            break;
+        }
+
+        // CXNN
+        case 0xC: {
+            randomNum(opcode);
+            break;
+        }
+
+        case 0xD: {
+            draw(opcode);
+            break;
+        }
+
+        case 0xE: {
+            switch (opcode.NN) {
+                case 0x9E: {
+                    // TODO
+
+                    break;
+                }
+
+                case 0xA1: {
                     break;
                 }
             }
@@ -272,6 +320,39 @@ void Chip8::subtractXfromY(Opcode opcode, bool *underflow) {
     V[opcode.X] = V[opcode.Y] - V[opcode.X];
 }
 
+void Chip8::shiftRight(Opcode opcode, uint8_t *shiftedBit) {
+    // TODO: Maybe make this assignment configurable
+    V[opcode.X] = V[opcode.Y];
+
+    *shiftedBit = V[opcode.X] & 0x1;
+
+    V[opcode.X] >>= 1;
+}
+
+void Chip8::shiftLeft(Opcode opcode, uint8_t *shiftedBit) {
+    // TODO: Maybe make this assignment configurable
+    V[opcode.X] = V[opcode.Y];
+
+    *shiftedBit = (V[opcode.X] & 0x80) >> 7;
+
+    V[opcode.X] >>= 1;
+}
+
 void Chip8::skipInstruction() { pc += 2; }
 
 void Chip8::jump(Opcode opcode) { pc = opcode.NNN; }
+
+void Chip8::jumpWithOffset(Opcode opcode) { pc = opcode.NNN + V[0]; }
+
+void Chip8::randomNum(Opcode opcode) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::uniform_int_distribution<int> distribution(0, 255);
+
+    uint8_t randomNum = distribution(gen);
+
+    randomNum &= opcode.NN;
+
+    V[opcode.X] = randomNum;
+}
