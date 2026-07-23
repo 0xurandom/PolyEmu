@@ -19,6 +19,8 @@ class Chip8 : public EmuBackend {
    public:
     bool loadROM(const std::string &filepath) override;
 
+    void loadFonts();
+
     static constexpr int displayWidth = 64;
     static constexpr int displayHeight = 32;
     int getDisplayWidth() const override { return displayWidth; }
@@ -31,6 +33,9 @@ class Chip8 : public EmuBackend {
     // 4kb ram
     uint8_t ram[4096] = {0};
 
+    // keys
+    bool keys[16] = {false};
+
     // index register
     uint16_t I = 0;
 
@@ -39,6 +44,26 @@ class Chip8 : public EmuBackend {
 
     // var register
     uint8_t V[16] = {0};
+
+    // fonts
+    static constexpr uint8_t fonts[80] = {
+        0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
+        0x20, 0x60, 0x20, 0x20, 0x70,  // 1
+        0xF0, 0x10, 0xF0, 0x80, 0xF0,  // 2
+        0xF0, 0x10, 0xF0, 0x10, 0xF0,  // 3
+        0x90, 0x90, 0xF0, 0x10, 0x10,  // 4
+        0xF0, 0x80, 0xF0, 0x10, 0xF0,  // 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0,  // 6
+        0xF0, 0x10, 0x20, 0x40, 0x40,  // 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0,  // 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0,  // 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90,  // A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0,  // B
+        0xF0, 0x80, 0x80, 0x80, 0xF0,  // C
+        0xE0, 0x90, 0x90, 0x90, 0xE0,  // D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0,  // E
+        0xF0, 0x80, 0xF0, 0x80, 0x80   // F
+    };
 
     uint16_t pc = 0;
 
@@ -69,4 +94,17 @@ class Chip8 : public EmuBackend {
     void jump(Opcode opcode);
     void jumpWithOffset(Opcode opcode);
     void randomNum(Opcode opcode);
+    void skipIfKey(Opcode opcode);
+    void skipIfNotKey(Opcode opcode);
+    void setVXToDelay(Opcode opcode);
+    void setDelayToVX(Opcode opcode);
+    void setSoundToVX(Opcode opcode);
+    void addToIndex(Opcode opcode, bool *overflow);
+    void getKey(Opcode opcode);
+    void setFont(Opcode opcode);
+    void binaryDecimalConversion(Opcode opcode);
+    void storeMem(Opcode opcode);
+    void loadMem(Opcode opcode);
+
+    bool isChip8KeyPressed();
 };

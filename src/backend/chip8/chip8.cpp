@@ -212,12 +212,62 @@ void Chip8::handleOpcode(Opcode opcode) {
         case 0xE: {
             switch (opcode.NN) {
                 case 0x9E: {
-                    // TODO
-
+                    skipIfKey(opcode);
                     break;
                 }
 
                 case 0xA1: {
+                    skipIfNotKey(opcode);
+                    break;
+                }
+            }
+
+            break;
+        }
+
+        case 0xF: {
+            switch (opcode.NN) {
+                case 0x07: {
+                    setVXToDelay(opcode);
+                    break;
+                }
+
+                case 0x15: {
+                    setDelayToVX(opcode);
+                    break;
+                }
+
+                case 0x18: {
+                    setSoundToVX(opcode);
+                    break;
+                }
+
+                case 0x1E: {
+                    bool overflow;
+                    addToIndex(opcode, &overflow);
+
+                    V[15] = overflow;
+
+                    break;
+                }
+
+                case 0x29: {
+                    setFont(opcode);
+                    break;
+                }
+
+                case 0x33: {
+                    binaryDecimalConversion(opcode);
+                    break;
+                }
+
+                case 0x55: {
+                    storeMem(opcode);
+                    break;
+                }
+
+                case 0x65: {
+                    loadMem(opcode);
                     break;
                 }
             }
@@ -355,4 +405,73 @@ void Chip8::randomNum(Opcode opcode) {
     randomNum &= opcode.NN;
 
     V[opcode.X] = randomNum;
+}
+
+void Chip8::skipIfKey(Opcode opcode) {
+    if (keys[V[opcode.X]] == true) pc += 2;
+}
+
+void Chip8::skipIfNotKey(Opcode opcode) {
+    if (keys[V[opcode.X]] == false) pc += 2;
+}
+
+void Chip8::setVXToDelay(Opcode opcode) { V[opcode.X] = delay_timer; }
+
+void Chip8::setDelayToVX(Opcode opcode) { delay_timer = V[opcode.X]; }
+
+void Chip8::setSoundToVX(Opcode opcode) { sound_timer = V[opcode.X]; }
+
+void Chip8::addToIndex(Opcode opcode, bool *overflow) {
+    uint16_t sum = I + V[opcode.X];
+
+    if (sum > 0x0FFF) {
+        *overflow = true;
+    }
+
+    I = sum;
+}
+
+void Chip8::getKey(Opcode opcode) {
+    if (!isChip8KeyPressed()) {
+        pc -= 2;
+    } else {
+        // TODO: put key pressed hex value in Vx
+    }
+}
+
+void Chip8::setFont(Opcode opcode) {
+    uint8_t num = V[opcode.X];
+
+    I = 0x050 + (num * 5);
+}
+
+void Chip8::binaryDecimalConversion(Opcode opcode) {
+    uint8_t num = V[opcode.X];
+
+    ram[I] = num / 100;
+    ram[I + 1] = (num / 10) % 10;
+    ram[I + 2] = num % 10;
+}
+
+void Chip8::storeMem(Opcode opcode) {
+    for (uint8_t i = 0; i < opcode.X; i++) {
+        ram[I + i] = V[i];
+    }
+}
+
+void Chip8::loadMem(Opcode opcode) {
+    for (uint8_t i = 0; i < opcode.X; i++) {
+        V[i] = ram[I + i];
+    }
+}
+
+bool Chip8::isChip8KeyPressed() {
+    for (int i = 0; i < 16; i++) {
+        if (keys[i] == true) return true;
+    }
+    return false;
+}
+
+void Chip8::loadFonts() {
+    std::copy(std::begin(fonts), std::end(fonts), ram + 0x050);
 }
