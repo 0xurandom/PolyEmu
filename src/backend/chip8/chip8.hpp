@@ -21,6 +21,8 @@ class Chip8 : public EmuBackend {
 
     void loadFonts();
 
+    uint8_t *getDisplay() {return display;}
+
     static constexpr int displayWidth = 64;
     static constexpr int displayHeight = 32;
     int getDisplayWidth() const override { return displayWidth; }
@@ -41,6 +43,8 @@ class Chip8 : public EmuBackend {
 
     // stack for funcs/subroutines
     uint16_t stack[16] = {0};
+
+    uint8_t sp = 0;
 
     // var register
     uint8_t V[16] = {0};
@@ -78,6 +82,8 @@ class Chip8 : public EmuBackend {
     void handleOpcode(Opcode opcode);
 
     void clearScreen();
+    void callSubroutine(Opcode opcode);
+    void returnFromSubroutine();
     void draw(Opcode opcode);
     void setVarRegister(Opcode opcode);
     void addValToRegister(Opcode opcode, bool *overflow);

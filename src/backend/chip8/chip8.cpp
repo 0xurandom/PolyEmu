@@ -9,9 +9,9 @@
 #include <random>
 
 Opcode Chip8::getOpcode() {
-    Opcode opcode = {.code =
-                         static_cast<uint16_t>((ram[pc] << 8) | ram[pc + 1])};
-    // TODO: do not increment pc if opcode is jump
+    Opcode opcode = {.code = static_cast<uint16_t>(
+                         (ram[pc] << 8) | ((pc < 4094) ? (ram[pc + 1]) : 0))};
+
     pc += 2;
 
     return opcode;
@@ -46,10 +46,16 @@ void Chip8::handleOpcode(Opcode opcode) {
     switch (firstNibble) {
         case 0x0: {
             switch (opcode.NN) {
+                // 00E0
                 case 0xE0:
                     clearScreen();
                     break;
-                case 0xEE:  // TODO subroutine
+
+                // 00EE
+                case 0xEE: {
+                    returnFromSubroutine();
+                    break;
+                }
 
                 default: {
                     std::cerr << "Error: Unknown opcode starting with 0x0"
@@ -69,7 +75,7 @@ void Chip8::handleOpcode(Opcode opcode) {
 
         // 2NNN
         case 0x2: {
-            // TODO
+            callSubroutine(opcode);
             break;
         }
 
@@ -171,6 +177,7 @@ void Chip8::handleOpcode(Opcode opcode) {
                     shiftRight(opcode, &shiftedBit);
 
                     V[15] = shiftedBit;
+                    break;
                 }
 
                 case 0xE: {
@@ -180,6 +187,7 @@ void Chip8::handleOpcode(Opcode opcode) {
                     shiftLeft(opcode, &shiftedBit);
 
                     V[15] = shiftedBit;
+                    break;
                 }
             }
 
@@ -195,6 +203,7 @@ void Chip8::handleOpcode(Opcode opcode) {
         // BNNN
         case 0xB: {
             // TODO: add configurable BXNN
+            jumpWithOffset(opcode);
             break;
         }
 
@@ -204,6 +213,7 @@ void Chip8::handleOpcode(Opcode opcode) {
             break;
         }
 
+        // DXYN
         case 0xD: {
             draw(opcode);
             break;
@@ -211,11 +221,13 @@ void Chip8::handleOpcode(Opcode opcode) {
 
         case 0xE: {
             switch (opcode.NN) {
+                // EX9E
                 case 0x9E: {
                     skipIfKey(opcode);
                     break;
                 }
 
+                // EXA1
                 case 0xA1: {
                     skipIfNotKey(opcode);
                     break;
@@ -227,21 +239,25 @@ void Chip8::handleOpcode(Opcode opcode) {
 
         case 0xF: {
             switch (opcode.NN) {
+                // FX07
                 case 0x07: {
                     setVXToDelay(opcode);
                     break;
                 }
 
+                // FX15
                 case 0x15: {
                     setDelayToVX(opcode);
                     break;
                 }
 
+                // FX18
                 case 0x18: {
                     setSoundToVX(opcode);
                     break;
                 }
 
+                // FX1E
                 case 0x1E: {
                     bool overflow;
                     addToIndex(opcode, &overflow);
@@ -251,21 +267,31 @@ void Chip8::handleOpcode(Opcode opcode) {
                     break;
                 }
 
+                // FX0A
+                case 0x0A: {
+                    getKey(opcode);
+                    break;
+                }
+
+                // FX29
                 case 0x29: {
                     setFont(opcode);
                     break;
                 }
 
+                // FX33
                 case 0x33: {
                     binaryDecimalConversion(opcode);
                     break;
                 }
 
+                // FX55
                 case 0x55: {
                     storeMem(opcode);
                     break;
                 }
 
+                // FX65
                 case 0x65: {
                     loadMem(opcode);
                     break;
@@ -304,13 +330,25 @@ void Chip8::draw(Opcode opcode) {
                 V[15] = 1;
 
             } else if ((spriteBit == 1) && (screenBit == 0)) {
-                screenBit = 1;
+                display[(Y * displayWidth) + X] = 1;
             }
         }
     }
 }
 
 void Chip8::clearScreen() { std::memset(display, 0, sizeof(display)); }
+
+void Chip8::callSubroutine(Opcode opcode) {
+    stack[sp] = pc;
+    sp++;
+
+    pc = opcode.NNN;
+}
+
+void Chip8::returnFromSubroutine() {
+    sp--;
+    pc = stack[sp];
+}
 
 void Chip8::setVarRegister(Opcode opcode) {
     if (opcode.X < 0 || opcode.X > 15) {
@@ -330,10 +368,12 @@ void Chip8::addValToRegister(Opcode opcode, bool *overflow) {
 
     int result = V[opcode.X] + opcode.NN;
 
-    if (result > 255)
-        *overflow = true;
-    else
-        *overflow = false;
+    if (overflow != NULL) {
+        if (result > 255)
+            *overflow = true;
+        else
+            *overflow = false;
+    }
 
     V[opcode.X] += opcode.NN;
 }
@@ -385,7 +425,7 @@ void Chip8::shiftLeft(Opcode opcode, uint8_t *shiftedBit) {
 
     *shiftedBit = (V[opcode.X] & 0x80) >> 7;
 
-    V[opcode.X] >>= 1;
+    V[opcode.X] <<= 1;
 }
 
 void Chip8::skipInstruction() { pc += 2; }
@@ -424,18 +464,20 @@ void Chip8::setSoundToVX(Opcode opcode) { sound_timer = V[opcode.X]; }
 void Chip8::addToIndex(Opcode opcode, bool *overflow) {
     uint16_t sum = I + V[opcode.X];
 
-    if (sum > 0x0FFF) {
+    if (sum > 0x0FFF)
         *overflow = true;
-    }
+    else
+        *overflow = false;
 
     I = sum;
 }
 
 void Chip8::getKey(Opcode opcode) {
-    if (!isChip8KeyPressed()) {
-        pc -= 2;
-    } else {
-        // TODO: put key pressed hex value in Vx
+    for (int i = 0; i < 16; i++) {
+        if (keys[i]) {
+            V[opcode.X] = i;
+            return;
+        }
     }
 }
 
@@ -454,13 +496,13 @@ void Chip8::binaryDecimalConversion(Opcode opcode) {
 }
 
 void Chip8::storeMem(Opcode opcode) {
-    for (uint8_t i = 0; i < opcode.X; i++) {
+    for (uint8_t i = 0; i <= opcode.X; i++) {
         ram[I + i] = V[i];
     }
 }
 
 void Chip8::loadMem(Opcode opcode) {
-    for (uint8_t i = 0; i < opcode.X; i++) {
+    for (uint8_t i = 0; i <= opcode.X; i++) {
         V[i] = ram[I + i];
     }
 }
