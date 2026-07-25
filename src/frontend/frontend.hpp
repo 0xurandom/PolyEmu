@@ -2,11 +2,18 @@
 
 #include <raylib.h>
 
+#include <cstdint>
 #include <vector>
+
 class EmuWindow {
    public:
     void init();
-    void initDisplay();
+    void initDisplay(int width, int height);
+    void updateDisplay(const uint8_t *pixels, int width, int height);
+    void drawDisplay();
+    void updateKeysPressed();
+
+    void closeEmuWindow();
 
     int getWidth();
     int getHeight();
@@ -36,5 +43,5 @@ class EmuWindow {
     int targetFPS = 60;
 
     std::vector<Color> pixelBuffer;
-    Texture2D displayTexture[];
+    Texture2D displayTexture{};
 };

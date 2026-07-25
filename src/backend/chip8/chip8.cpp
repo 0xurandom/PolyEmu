@@ -336,6 +336,12 @@ void Chip8::draw(Opcode opcode) {
     }
 }
 
+void Chip8::runTimers() {
+    if (delay_timer > 0) delay_timer--;
+
+    if (sound_timer > 0) sound_timer--;
+}
+
 void Chip8::clearScreen() { std::memset(display, 0, sizeof(display)); }
 
 void Chip8::callSubroutine(Opcode opcode) {

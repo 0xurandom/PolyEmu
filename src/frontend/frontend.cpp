@@ -1,5 +1,8 @@
 #include "frontend.hpp"
 
+#include <cstdint>
+
+#include "../backend/chip8/chip8.hpp"
 #include "raygui.h"
 #include "raylib.h"
 
@@ -11,7 +14,48 @@ void EmuWindow::init() {
     SetTargetFPS(this->targetFPS);
 }
 
-void EmuWindow::initDisplay() {}
+void EmuWindow::initDisplay(int width, int height) {
+    Image img = GenImageColor(width, height, BLACK);
+
+    displayTexture = LoadTextureFromImage(img);
+
+    UnloadImage(img);
+    SetTextureFilter(displayTexture, TEXTURE_FILTER_POINT);
+
+    pixelBuffer.resize(width * height);
+}
+
+void EmuWindow::updateDisplay(const uint8_t *pixels, int width, int height) {
+    for (int i = 0; i < width * height; i++) {
+        if (pixels[i])
+            pixelBuffer[i] = WHITE;
+        else
+            pixelBuffer[i] = BLACK;
+    }
+
+    UpdateTexture(displayTexture, pixelBuffer.data());
+}
+
+void EmuWindow::drawDisplay() {
+    Rectangle src = {0, 0, (float)displayTexture.width,
+                     (float)displayTexture.height};
+
+    Rectangle dest = {
+        0,
+        (float)menuBarHeight,
+        (float)Width,
+        (float)(Height - menuBarHeight),
+    };
+
+    DrawTexturePro(displayTexture, src, dest, {0, 0}, 0, WHITE);
+}
+
+void EmuWindow::updateKeysPressed(Chip8 chip8) {}
+
+void EmuWindow::closeEmuWindow() {
+    UnloadTexture(displayTexture);
+    CloseWindow();
+}
 
 int EmuWindow::getWidth() { return Width; }
 
