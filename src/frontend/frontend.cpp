@@ -2,7 +2,6 @@
 
 #include <cstdint>
 
-#include "../backend/chip8/chip8.hpp"
 #include "raygui.h"
 #include "raylib.h"
 
@@ -50,7 +49,11 @@ void EmuWindow::drawDisplay() {
     DrawTexturePro(displayTexture, src, dest, {0, 0}, 0, WHITE);
 }
 
-void EmuWindow::updateKeysPressed(Chip8 chip8) {}
+void EmuWindow::updateKeysPressed(Chip8 &chip8) {
+    for (int i = 0; i < 16; i++) {
+        chip8.setKeyState(i, IsKeyDown(Chip8keymap[i]));
+    }
+}
 
 void EmuWindow::closeEmuWindow() {
     UnloadTexture(displayTexture);

@@ -5,13 +5,20 @@
 #include <cstdint>
 #include <vector>
 
+#include "../backend/chip8/chip8.hpp"
+
+const KeyboardKey Chip8keymap[16] = {
+    KEY_X, KEY_ONE, KEY_TWO, KEY_THREE, KEY_Q,    KEY_W, KEY_E, KEY_A,
+    KEY_S, KEY_D,   KEY_Z,   KEY_C,     KEY_FOUR, KEY_R, KEY_F, KEY_V,
+};
+
 class EmuWindow {
    public:
     void init();
     void initDisplay(int width, int height);
     void updateDisplay(const uint8_t *pixels, int width, int height);
     void drawDisplay();
-    void updateKeysPressed();
+    void updateKeysPressed(Chip8 &chip8);
 
     void closeEmuWindow();
 

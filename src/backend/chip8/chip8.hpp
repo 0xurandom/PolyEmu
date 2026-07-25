@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 #include "../backend.hpp"
@@ -15,9 +16,34 @@ struct Opcode {
     uint16_t NNN = (code & 0x0FFF);
 };
 
+enum class Chip8Key {
+    Zero = 0x0,
+    One = 0x1,
+    Two = 0x2,
+    Three = 0x3,
+    Four = 0x4,
+    Five = 0x5,
+    Six = 0x6,  // 67
+    Seven = 0x7,
+    Eight = 0x8,
+    Nine = 0x9,
+
+    A = 0xA,
+    B = 0xB,
+    C = 0xC,
+    D = 0xD,
+    E = 0xE,
+    F = 0xF,
+};
+
 class Chip8 : public EmuBackend {
    public:
     bool loadROM(const std::string &filepath) override;
+
+    Opcode getOpcode();
+    void handleOpcode(Opcode opcode);
+
+    void runTimers();
 
     void loadFonts();
 
@@ -27,6 +53,15 @@ class Chip8 : public EmuBackend {
     static constexpr int displayHeight = 32;
     int getDisplayWidth() const override { return displayWidth; }
     int getDisplayHeight() const override { return displayHeight; }
+
+    void setKeyState(int key, bool state) {
+        if (key < 0 || key > 15) {
+            std::cerr << "Error: Unknown key passed to setKeystate\n";
+            return;
+        }
+
+        keys[key] = state;
+    }
 
    private:
     // display
@@ -69,7 +104,7 @@ class Chip8 : public EmuBackend {
         0xF0, 0x80, 0xF0, 0x80, 0x80   // F
     };
 
-    uint16_t pc = 0;
+    uint16_t pc = 0x200;
 
     // delay timer
     uint8_t delay_timer = 0;
@@ -77,14 +112,8 @@ class Chip8 : public EmuBackend {
     // sound timer
     uint8_t sound_timer = 0;
 
-    Opcode getOpcode();
-
-    void handleOpcode(Opcode opcode);
-
     void draw(Opcode opcode);
     void clearScreen();
-
-    void runTimers();
 
     void callSubroutine(Opcode opcode);
     void returnFromSubroutine();

@@ -24,9 +24,12 @@ bool Chip8::loadROM(const std::string &filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
 
     if (!file.is_open()) {
-        std::cerr << "Error: Could not open ROM" << std::endl;
+        std::cerr << "Error: Could not open chip8 rom file" << std::endl;
         return false;
     }
+
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
 
     if (file.tellg() > maxSize) {
         std::cerr << "Error: ROM size is larger than can be allocated in ram"
@@ -34,10 +37,12 @@ bool Chip8::loadROM(const std::string &filepath) {
         return false;
     }
 
-    if (!file.read(reinterpret_cast<char *>(&ram[startAddr]), file.tellg()))
+    if (!file.read(reinterpret_cast<char *>(&ram[startAddr]), file.tellg())) {
+        std::cerr << "Error: Could not read chip8 rom" << std::endl;
         return false;
-    else
+    } else {
         return true;
+    }
 }
 
 void Chip8::handleOpcode(Opcode opcode) {
