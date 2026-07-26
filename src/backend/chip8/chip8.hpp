@@ -9,11 +9,19 @@
 struct Opcode {
     uint16_t code;
 
-    uint8_t X = (code & 0xF000) >> 8;
-    uint8_t Y = (code & 0x0F00) >> 8;
-    uint8_t N = (code & 0x00F0);
-    uint8_t NN = (code & 0x00FF);
-    uint16_t NNN = (code & 0x0FFF);
+    uint8_t X;
+    uint8_t Y;
+    uint8_t N;
+    uint8_t NN;
+    uint16_t NNN;
+
+    explicit Opcode(uint16_t inputCode)
+        : code(inputCode),
+          X((inputCode & 0x0F00) >> 8),
+          Y((inputCode & 0x00F0) >> 4),
+          N(inputCode & 0x000F),
+          NN(inputCode & 0x00FF),
+          NNN(inputCode & 0x0FFF) {}
 };
 
 enum class Chip8Key {

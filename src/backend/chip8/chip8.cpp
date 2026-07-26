@@ -1,6 +1,5 @@
 #include "chip8.hpp"
 
-#include <climits>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -9,8 +8,8 @@
 #include <random>
 
 Opcode Chip8::getOpcode() {
-    Opcode opcode = {.code = static_cast<uint16_t>(
-                         (ram[pc] << 8) | ((pc < 4094) ? (ram[pc + 1]) : 0))};
+    Opcode opcode(static_cast<uint16_t>((ram[pc] << 8) |
+                                        ((pc < 4094) ? (ram[pc + 1]) : 0)));
 
     pc += 2;
 
@@ -31,13 +30,13 @@ bool Chip8::loadROM(const std::string &filepath) {
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
 
-    if (file.tellg() > maxSize) {
+    if (size > maxSize) {
         std::cerr << "Error: ROM size is larger than can be allocated in ram"
                   << std::endl;
         return false;
     }
 
-    if (!file.read(reinterpret_cast<char *>(&ram[startAddr]), file.tellg())) {
+    if (!file.read(reinterpret_cast<char *>(&ram[startAddr]), size)) {
         std::cerr << "Error: Could not read chip8 rom" << std::endl;
         return false;
     } else {
@@ -63,8 +62,8 @@ void Chip8::handleOpcode(Opcode opcode) {
                 }
 
                 default: {
-                    std::cerr << "Error: Unknown opcode starting with 0x0"
-                              << std::endl;
+                    std::cerr << "Error: Unknown opcode starting with 0x0: "
+                              << opcode.NN << std::endl;
                     break;
                 }
             }
@@ -363,8 +362,8 @@ void Chip8::returnFromSubroutine() {
 
 void Chip8::setVarRegister(Opcode opcode) {
     if (opcode.X < 0 || opcode.X > 15) {
-        std::cerr << "Error: setVarRegister received invalid register num"
-                  << std::endl;
+        std::cerr << "Error: setVarRegister received invalid register num: "
+                  << (int)opcode.X << std::endl;
     }
 
     V[opcode.X] = opcode.NN;
@@ -373,8 +372,8 @@ void Chip8::setVarRegister(Opcode opcode) {
 void Chip8::addValToRegister(Opcode opcode, bool *overflow) {
     // TODO: move this error after fetching opcode
     if (opcode.X < 0 || opcode.X > 15) {
-        std::cerr << "Error: addValToRegister received invalid register num"
-                  << std::endl;
+        std::cerr << "Error: addValToRegister received invalid register num: "
+                  << (int)opcode.X << std::endl;
     }
 
     int result = V[opcode.X] + opcode.NN;

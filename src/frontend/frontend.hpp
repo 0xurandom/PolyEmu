@@ -37,13 +37,16 @@ class EmuWindow {
     } menuBar;
 
    private:
-    int Width = 64;
-    int Height = 32;
+    int scale = 10;
 
-    int scale = 6;
+    int windowWidth = 64 * scale;
+    int windowHeight = 32 * scale;
 
-    int menuBarWidth = Width;
-    int menuBarHeight = 30;
+    int chip8DisplayWidth = 64;
+    int chip8DisplayHeight = 32;
+
+    int menuBarWidth = windowWidth;
+    int menuBarHeight = 20;
 
     static constexpr char Header[] = "PolyEmu";
 

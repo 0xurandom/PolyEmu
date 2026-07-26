@@ -7,10 +7,10 @@
 
 void EmuWindow::init() {
     //  TODO: autoscale content
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(this->Width * scale, this->Height * scale, this->Header);
-
+    // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    InitWindow(windowWidth, windowHeight, this->Header);
     SetTargetFPS(this->targetFPS);
+    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(GRAY));
 }
 
 void EmuWindow::initDisplay(int width, int height) {
@@ -42,8 +42,8 @@ void EmuWindow::drawDisplay() {
     Rectangle dest = {
         0,
         (float)menuBarHeight,
-        (float)Width,
-        (float)(Height - menuBarHeight),
+        (float)windowWidth,
+        (float)(windowHeight - menuBarHeight),
     };
 
     DrawTexturePro(displayTexture, src, dest, {0, 0}, 0, WHITE);
@@ -60,9 +60,9 @@ void EmuWindow::closeEmuWindow() {
     CloseWindow();
 }
 
-int EmuWindow::getWidth() { return Width; }
+int EmuWindow::getWidth() { return windowWidth; }
 
-int EmuWindow::getHeight() { return Height; }
+int EmuWindow::getHeight() { return windowHeight; }
 
 int EmuWindow::getMenuBarWidth() { return menuBarWidth; }
 
