@@ -55,6 +55,26 @@ void EmuWindow::updateKeysPressed(Chip8 &chip8) {
     }
 }
 
+void EmuWindow::handleROM(std::string filePath) {
+    const char *extension = GetFileExtension(filePath.c_str());
+
+    if (extension != nullptr && strcmp(extension, ".ch8") == 0) {
+        if (getRomIsLoaded()) {
+            getChip8Ptr()->reset();
+        }
+
+        if (getChip8Ptr()->loadROM(filePath)) {
+            std::cout << "Chip8: Successfully loaded chip8 rom: " << filePath
+                      << std::endl;
+            setRomIsLoaded(true);
+        } else {
+            std::cerr << "Error: Couldn't load chip8 rom" << std::endl;
+        }
+    } else {
+        std::cout << "Error: Unknown file" << std::endl;
+    }
+}
+
 void EmuWindow::closeEmuWindow() {
     UnloadTexture(displayTexture);
     CloseWindow();

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <iostream>
-#include <vector>
 
 #include "../backend.hpp"
 
@@ -70,6 +69,8 @@ class Chip8 : public EmuBackend {
 
         keys[key] = state;
     }
+
+    void reset();
 
    private:
     // display

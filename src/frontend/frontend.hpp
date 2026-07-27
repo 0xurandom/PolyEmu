@@ -3,6 +3,7 @@
 #include <raylib.h>
 
 #include <cstdint>
+#include <cstring>
 #include <vector>
 
 #include "../backend/chip8/chip8.hpp"
@@ -28,6 +29,16 @@ class EmuWindow {
     int getMenuBarWidth();
     int getMenubarHeight();
 
+    bool getShowFPS() { return showFPS; }
+    void setShowFPS(bool val) { showFPS = val; }
+
+    void handleROM(std::string filePath);
+    bool getRomIsLoaded() { return romIsLoaded; }
+    void setRomIsLoaded(bool val) { romIsLoaded = val; }
+
+    Chip8 *getChip8Ptr() { return chip8; }
+    void setChip8Ptr(Chip8 *chip8) { this->chip8 = chip8; }
+
     struct {
         bool fileEditMode = false;
         bool emulatorEditMode = false;
@@ -37,6 +48,11 @@ class EmuWindow {
     } menuBar;
 
    private:
+    bool romIsLoaded = false;
+
+    bool showFPS = true;
+    int targetFPS = 60;
+
     int scale = 10;
 
     int windowWidth = 64 * scale;
@@ -50,8 +66,9 @@ class EmuWindow {
 
     static constexpr char Header[] = "PolyEmu";
 
-    int targetFPS = 60;
-
+    // CHIP8
     std::vector<Color> pixelBuffer;
     Texture2D displayTexture{};
+
+    Chip8 *chip8 = NULL;
 };

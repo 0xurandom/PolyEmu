@@ -1,30 +1,26 @@
 #include <raylib.h>
 
-#include <chrono>
 #include <cstring>
 #include <iostream>
-#include <thread>
 
 #include "backend/chip8/chip8.hpp"
-#define RAYGUI_IMPLEMENTATION
 #include "frontend/frontend.hpp"
+#define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
-
-#define SHOW_FPS 1
 
 int main(int argc, char** argv) {
     Chip8 chip8;
-
-    bool romIsLoaded = false;
 
     Vector2 mouseCell = {0.0f, 0.0f};
 
     EmuWindow emuWindow;
     emuWindow.init();
     emuWindow.initDisplay(Chip8::displayWidth, Chip8::displayHeight);
+    emuWindow.setChip8Ptr(&chip8);
+    // TODO: init chip8 from window
 
     while (!WindowShouldClose()) {
-        if (romIsLoaded) {
+        if (emuWindow.getRomIsLoaded()) {
             emuWindow.updateKeysPressed(chip8);
 
             // run 11 instructions per frame
@@ -42,17 +38,19 @@ int main(int argc, char** argv) {
 
         ClearBackground(LIGHTGRAY);
 
-        if (romIsLoaded) {
+        if (emuWindow.getRomIsLoaded()) {
             emuWindow.drawDisplay();
 
-            DrawText(TextFormat("fps: %d", GetFPS()), 30, 30, 10, RED);
+            if (emuWindow.getShowFPS())
+                DrawText(TextFormat("fps: %d", GetFPS()), 30, 30, 20, RED);
 
         } else {
-            DrawText("Drag and drop ROMs here", 200, 200, 20, LIGHTGRAY);
+            DrawText("Drag and drop ROMs here", 200, 200, 20, BLACK);
 
             GuiGrid(Rectangle{0, (float)emuWindow.getHeight(),
                               (float)emuWindow.getWidth(),
-                              (float)emuWindow.getHeight() - 20},
+                              (float)emuWindow.getHeight() -
+                                  (float)emuWindow.getMenubarHeight()},
                     "grid", (float)20, 1, &mouseCell);
         }
         GuiPanel(Rectangle{0, 0, (float)emuWindow.getWidth()}, nullptr);
@@ -61,36 +59,26 @@ int main(int argc, char** argv) {
                 Rectangle{0, 0, 75, (float)emuWindow.getMenubarHeight()},
                 "File;Open;Exit", &emuWindow.menuBar.fileActive,
                 emuWindow.menuBar.fileEditMode)) {
+            std::cout << "File pressed" << std::endl;
         }
 
         if (GuiDropdownBox(Rectangle{75 + 0, 0, 75 + 75,
                                      (float)emuWindow.getMenubarHeight()},
                            "Emulator;Reset", &emuWindow.menuBar.emulatorActive,
                            emuWindow.menuBar.emulatorEditMode)) {
+            std::cout << "Emulator presed" << std::endl;
         }
 
         if (IsFileDropped()) {
             FilePathList droppedFiles = LoadDroppedFiles();
 
             if (droppedFiles.count > 1) {
-                std::cout << "Cannot open multiple files\n";
+                std::cout << "Error: Cannot open multiple files\n";
                 exit(1);
             }
 
             std::string filePath = droppedFiles.paths[0];
-            const char* extension = GetFileExtension(filePath.c_str());
-
-            if (extension != nullptr && strcmp(extension, ".ch8") == 0) {
-                if (chip8.loadROM(filePath)) {
-                    std::cout << "Chip8: Successfully loaded chip8 rom\n";
-                    romIsLoaded = true;
-                } else {
-                    std::cerr << "Error: Couldn't load chip8 rom\n";
-                }
-            } else {
-                std::cout << "Error: Unknown file\n";
-            }
-
+            emuWindow.handleROM(filePath);
             UnloadDroppedFiles(droppedFiles);
         }
         EndDrawing();

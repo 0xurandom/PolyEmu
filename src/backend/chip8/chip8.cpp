@@ -134,19 +134,19 @@ void Chip8::handleOpcode(Opcode opcode) {
                 }
 
                 case 0x2: {
-                    // 0XY2
+                    // 8XY2
                     binaryAnd(opcode);
                     break;
                 }
 
                 case 0x3: {
-                    // 0XY3
+                    // 8XY3
                     binaryXor(opcode);
                     break;
                 }
 
                 case 0x4: {
-                    // 0XY4
+                    // 8XY4
                     bool overflow;
                     addValToRegister(opcode, &overflow);
 
@@ -156,7 +156,7 @@ void Chip8::handleOpcode(Opcode opcode) {
                 }
 
                 case 0x5: {
-                    // 0XY5
+                    // 8XY5
                     bool underflow;
                     subtractYfromX(opcode, &underflow);
 
@@ -166,7 +166,7 @@ void Chip8::handleOpcode(Opcode opcode) {
                 }
 
                 case 0x7: {
-                    // 0XY7
+                    // 8XY7
                     bool underflow;
                     subtractXfromY(opcode, &underflow);
 
@@ -335,9 +335,30 @@ void Chip8::draw(Opcode opcode) {
 
             } else if ((spriteBit == 1) && (screenBit == 0)) {
                 display[(Y * displayWidth) + X] = 1;
+                V[15] = 0;
             }
         }
     }
+}
+
+void Chip8::reset() {
+    clearScreen();
+
+    for (size_t i = 0; i < 4096; i++) {
+        ram[i] = 0;
+    }
+
+    for (size_t i = 0; i < 16; i++) {
+        keys[i] = false;
+        stack[i] = 0;
+        V[i] = 0;
+    }
+
+    I = 0;
+    sp = 0;
+    pc = 0x200;
+    delay_timer = 0;
+    sound_timer = 0;
 }
 
 void Chip8::runTimers() {
@@ -403,7 +424,7 @@ void Chip8::binaryXor(Opcode opcode) {
 }
 
 void Chip8::subtractYfromX(Opcode opcode, bool *underflow) {
-    if (V[opcode.X] > V[opcode.Y])
+    if (V[opcode.X] >= V[opcode.Y])
         *underflow = true;
     else
         *underflow = false;
@@ -412,7 +433,7 @@ void Chip8::subtractYfromX(Opcode opcode, bool *underflow) {
 }
 
 void Chip8::subtractXfromY(Opcode opcode, bool *underflow) {
-    if (V[opcode.Y] > V[opcode.X])
+    if (V[opcode.Y] >= V[opcode.X])
         *underflow = true;
     else
         *underflow = false;
@@ -422,18 +443,18 @@ void Chip8::subtractXfromY(Opcode opcode, bool *underflow) {
 
 void Chip8::shiftRight(Opcode opcode, uint8_t *shiftedBit) {
     // TODO: Maybe make this assignment configurable
-    V[opcode.X] = V[opcode.Y];
-
-    *shiftedBit = V[opcode.X] & 0x1;
+    // V[opcode.X] = V[opcode.Y];
+    //
+    // *shiftedBit = V[opcode.X] & 0x1;
 
     V[opcode.X] >>= 1;
 }
 
 void Chip8::shiftLeft(Opcode opcode, uint8_t *shiftedBit) {
     // TODO: Maybe make this assignment configurable
-    V[opcode.X] = V[opcode.Y];
-
-    *shiftedBit = (V[opcode.X] & 0x80) >> 7;
+    // V[opcode.X] = V[opcode.Y];
+    //
+    // *shiftedBit = (V[opcode.X] & 0x80) >> 7;
 
     V[opcode.X] <<= 1;
 }
@@ -483,12 +504,18 @@ void Chip8::addToIndex(Opcode opcode, bool *overflow) {
 }
 
 void Chip8::getKey(Opcode opcode) {
+    bool keyPressed = false;
+
     for (int i = 0; i < 16; i++) {
         if (keys[i]) {
             V[opcode.X] = i;
-            return;
+            keyPressed = true;
         }
     }
+
+    if (!keyPressed) pc -= 2;
+
+    return;
 }
 
 void Chip8::setFont(Opcode opcode) {
@@ -509,12 +536,15 @@ void Chip8::storeMem(Opcode opcode) {
     for (uint8_t i = 0; i <= opcode.X; i++) {
         ram[I + i] = V[i];
     }
+    // TODO: add this as a toggle
+    I += opcode.X + 1;
 }
 
 void Chip8::loadMem(Opcode opcode) {
     for (uint8_t i = 0; i <= opcode.X; i++) {
         V[i] = ram[I + i];
     }
+    I += opcode.X + 1;
 }
 
 bool Chip8::isChip8KeyPressed() {
