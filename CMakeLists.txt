@@ -18,6 +18,8 @@ target_sources(polyemu PRIVATE
   src/frontend/frontend.cpp
 )
 
-target_include_directories(polyemu PRIVATE src/vendor)
+target_include_directories(polyemu PRIVATE vendor)
+add_subdirectory(vendor/nativefiledialog-extended)
+target_link_libraries(polyemu PRIVATE nfd)
 
 target_link_libraries(polyemu PRIVATE raylib)
