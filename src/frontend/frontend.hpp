@@ -19,7 +19,7 @@ class EmuWindow {
     void initDisplay(int width, int height);
     void updateDisplay(const uint8_t *pixels, int width, int height);
     void drawDisplay();
-    void updateKeysPressed(Chip8 &chip8);
+    void updateKeysPressed();
 
     void closeEmuWindow();
 
@@ -32,12 +32,18 @@ class EmuWindow {
     bool getShowFPS() { return showFPS; }
     void setShowFPS(bool val) { showFPS = val; }
 
-    void handleROM(std::string filePath);
+    void openFileDialog();
+    void handleROM(const std::string filePath);
     bool getRomIsLoaded() { return romIsLoaded; }
     void setRomIsLoaded(bool val) { romIsLoaded = val; }
 
+    void resetEmu();
+
+    void checkKeyboardShortcuts();
+
     Chip8 *getChip8Ptr() { return chip8; }
     void setChip8Ptr(Chip8 *chip8) { this->chip8 = chip8; }
+    std::string gettChip8RomPath() { return chip8RomPath; }
 
     struct {
         bool fileEditMode = false;
@@ -69,6 +75,7 @@ class EmuWindow {
     // CHIP8
     std::vector<Color> pixelBuffer;
     Texture2D displayTexture{};
+    std::string chip8RomPath;
 
     Chip8 *chip8 = NULL;
 };

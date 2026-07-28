@@ -1,10 +1,10 @@
 #include <raylib.h>
 
-#include <cstring>
 #include <iostream>
 
 #include "backend/chip8/chip8.hpp"
 #include "frontend/frontend.hpp"
+
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
@@ -19,9 +19,18 @@ int main(int argc, char** argv) {
     emuWindow.setChip8Ptr(&chip8);
     // TODO: init chip8 from window
 
+    if (argc > 1) {
+        if (argc != 2)
+            std::cerr << "Warning: Cannot open multiple files" << std::endl;
+
+        emuWindow.handleROM(argv[1]);
+    }
+
     while (!WindowShouldClose()) {
+        emuWindow.checkKeyboardShortcuts();
+
         if (emuWindow.getRomIsLoaded()) {
-            emuWindow.updateKeysPressed(chip8);
+            emuWindow.updateKeysPressed();
 
             // run 11 instructions per frame
             for (int i = 0; i < 11; i++) {
@@ -36,15 +45,13 @@ int main(int argc, char** argv) {
 
         BeginDrawing();
 
-        ClearBackground(LIGHTGRAY);
-
         if (emuWindow.getRomIsLoaded()) {
             emuWindow.drawDisplay();
 
             if (emuWindow.getShowFPS())
                 DrawText(TextFormat("fps: %d", GetFPS()), 30, 30, 20, RED);
-
         } else {
+            ClearBackground(LIGHTGRAY);
             DrawText("Drag and drop ROMs here", 200, 200, 20, BLACK);
 
             GuiGrid(Rectangle{0, (float)emuWindow.getHeight(),
@@ -73,7 +80,7 @@ int main(int argc, char** argv) {
             FilePathList droppedFiles = LoadDroppedFiles();
 
             if (droppedFiles.count > 1) {
-                std::cout << "Error: Cannot open multiple files\n";
+                std::cout << "Error: Cannot open multiple files" << std::endl;
                 exit(1);
             }
 

@@ -344,15 +344,10 @@ void Chip8::draw(Opcode opcode) {
 void Chip8::reset() {
     clearScreen();
 
-    for (size_t i = 0; i < 4096; i++) {
-        ram[i] = 0;
-    }
-
-    for (size_t i = 0; i < 16; i++) {
-        keys[i] = false;
-        stack[i] = 0;
-        V[i] = 0;
-    }
+    memset(ram, 0, sizeof(ram));
+    memset(keys, 0, sizeof(keys));
+    memset(stack, 0, sizeof(stack));
+    memset(V, 0, sizeof(V));
 
     I = 0;
     sp = 0;
