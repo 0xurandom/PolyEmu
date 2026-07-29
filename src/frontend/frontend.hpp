@@ -23,20 +23,30 @@ class EmuWindow {
 
     void closeEmuWindow();
 
-    int getWidth();
-    int getHeight();
+    int getWidth() { return windowWidth; }
+    int getHeight() { return windowHeight; }
 
-    int getMenuBarWidth();
-    int getMenubarHeight();
+    int getMenuBarWidth() { return menuBarWidth; }
+    int getMenubarHeight() { return menuBarHeight; }
+
+    void drawMenuBar();
 
     bool getShowFPS() { return showFPS; }
     void setShowFPS(bool val) { showFPS = val; }
+
+    bool getIsPaused() { return isPaused; }
+    void setIsPaused(bool val) { isPaused = val; }
+
+    int getChip8InstPerFrame() { return chip8InstPerFrame; }
+    void setchip8InstPerFrame(int val) { chip8InstPerFrame = val; }
+    void resetchip8InstPerFrame() { chip8InstPerFrame = defaultInstPerFrame; }
 
     void openFileDialog();
     void handleROM(const std::string filePath);
     bool getRomIsLoaded() { return romIsLoaded; }
     void setRomIsLoaded(bool val) { romIsLoaded = val; }
 
+    void runEmuFrame();
     void resetEmu();
 
     void checkKeyboardShortcuts();
@@ -55,8 +65,9 @@ class EmuWindow {
 
    private:
     bool romIsLoaded = false;
+    bool isPaused = false;
 
-    bool showFPS = true;
+    bool showFPS = false;
     int targetFPS = 60;
 
     int scale = 10;
@@ -76,6 +87,9 @@ class EmuWindow {
     std::vector<Color> pixelBuffer;
     Texture2D displayTexture{};
     std::string chip8RomPath;
+
+    int chip8InstPerFrame = 11;
+    int defaultInstPerFrame = 11;
 
     Chip8 *chip8 = NULL;
 };

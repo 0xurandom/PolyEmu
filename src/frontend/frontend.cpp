@@ -14,7 +14,7 @@ void EmuWindow::init() {
     // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(windowWidth, windowHeight, this->Header);
     SetTargetFPS(this->targetFPS);
-    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(GRAY));
+    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(WHITE));
 }
 
 void EmuWindow::initDisplay(int width, int height) {
@@ -80,6 +80,19 @@ void EmuWindow::handleROM(const std::string filePath) {
     }
 }
 
+void EmuWindow::runEmuFrame() {
+    updateKeysPressed();
+
+    for (int i = 0; i < getChip8InstPerFrame(); i++) {
+        Opcode opcode = chip8->getOpcode();
+        chip8->handleOpcode(opcode);
+    }
+    chip8->runTimers();
+
+    updateDisplay(chip8->getDisplay(), Chip8::displayWidth,
+                  Chip8::displayHeight);
+}
+
 void EmuWindow::openFileDialog() {
     NFD_Init();
 
@@ -103,16 +116,22 @@ void EmuWindow::checkKeyboardShortcuts() {
     // Open: Ctrl + O
     if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
         IsKeyPressed(KEY_O)) {
-        std::cout << "Ctrl + O pressed" << std::endl;
+        std::cout << "Window: Ctrl + O pressed" << std::endl;
         openFileDialog();
     }
 
     // Reset: Ctrl + R
     if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
         IsKeyPressed(KEY_R)) {
-        std::cout << "Ctrl + R pressed" << std::endl;
+        std::cout << "Window: Ctrl + R pressed" << std::endl;
         resetEmu();
     }
+}
+
+// TODO: moving menu bar buttons here does not work
+void EmuWindow::drawMenuBar() {
+    GuiPanel(Rectangle{0, 0, (float)getWidth(), (float)getMenubarHeight()},
+             nullptr);
 }
 
 void EmuWindow::resetEmu() {
@@ -124,11 +143,3 @@ void EmuWindow::closeEmuWindow() {
     UnloadTexture(displayTexture);
     CloseWindow();
 }
-
-int EmuWindow::getWidth() { return windowWidth; }
-
-int EmuWindow::getHeight() { return windowHeight; }
-
-int EmuWindow::getMenuBarWidth() { return menuBarWidth; }
-
-int EmuWindow::getMenubarHeight() { return menuBarHeight; }

@@ -115,7 +115,7 @@ void Chip8::handleOpcode(Opcode opcode) {
 
         // 7XNN
         case 0x7: {
-            addValToRegister(opcode, NULL);
+            addValToRegister(opcode);
             break;
         }
 
@@ -147,10 +147,7 @@ void Chip8::handleOpcode(Opcode opcode) {
 
                 case 0x4: {
                     // 8XY4
-                    bool overflow;
-                    addValToRegister(opcode, &overflow);
-
-                    V[15] = overflow;
+                    addValToRegisterOverflow(opcode);
 
                     break;
                 }
@@ -335,7 +332,7 @@ void Chip8::draw(Opcode opcode) {
 
             } else if ((spriteBit == 1) && (screenBit == 0)) {
                 display[(Y * displayWidth) + X] = 1;
-                V[15] = 0;
+                // V[15] = 0;
             }
         }
     }
@@ -385,7 +382,7 @@ void Chip8::setVarRegister(Opcode opcode) {
     V[opcode.X] = opcode.NN;
 }
 
-void Chip8::addValToRegister(Opcode opcode, bool *overflow) {
+void Chip8::addValToRegister(Opcode opcode) {
     // TODO: move this error after fetching opcode
     if (opcode.X < 0 || opcode.X > 15) {
         std::cerr << "Error: addValToRegister received invalid register num: "
@@ -394,14 +391,18 @@ void Chip8::addValToRegister(Opcode opcode, bool *overflow) {
 
     int result = V[opcode.X] + opcode.NN;
 
-    if (overflow != NULL) {
-        if (result > 255)
-            *overflow = true;
-        else
-            *overflow = false;
-    }
-
     V[opcode.X] += opcode.NN;
+}
+
+void Chip8::addValToRegisterOverflow(Opcode opcode) {
+    int result = V[opcode.X] + V[opcode.Y];
+
+    if (result > 255)
+        V[15] = 1;
+    else
+        V[15] = 0;
+
+    V[opcode.X] += V[opcode.Y];
 }
 
 void Chip8::setVXtoVY(Opcode opcode) { V[opcode.X] = V[opcode.Y]; }
@@ -438,18 +439,18 @@ void Chip8::subtractXfromY(Opcode opcode, bool *underflow) {
 
 void Chip8::shiftRight(Opcode opcode, uint8_t *shiftedBit) {
     // TODO: Maybe make this assignment configurable
-    // V[opcode.X] = V[opcode.Y];
-    //
-    // *shiftedBit = V[opcode.X] & 0x1;
+    V[opcode.X] = V[opcode.Y];
+
+    *shiftedBit = V[opcode.X] & 0x1;
 
     V[opcode.X] >>= 1;
 }
 
 void Chip8::shiftLeft(Opcode opcode, uint8_t *shiftedBit) {
     // TODO: Maybe make this assignment configurable
-    // V[opcode.X] = V[opcode.Y];
-    //
-    // *shiftedBit = (V[opcode.X] & 0x80) >> 7;
+    V[opcode.X] = V[opcode.Y];
+
+    *shiftedBit = (V[opcode.X] & 0x80) >> 7;
 
     V[opcode.X] <<= 1;
 }

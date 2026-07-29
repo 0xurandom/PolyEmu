@@ -27,23 +27,88 @@ int main(int argc, char** argv) {
     }
 
     while (!WindowShouldClose()) {
+        BeginDrawing();
+
         emuWindow.checkKeyboardShortcuts();
 
-        if (emuWindow.getRomIsLoaded()) {
-            emuWindow.updateKeysPressed();
-
-            // run 11 instructions per frame
-            for (int i = 0; i < 11; i++) {
-                Opcode opcode = chip8.getOpcode();
-                chip8.handleOpcode(opcode);
-            }
-            chip8.runTimers();
-
-            emuWindow.updateDisplay(chip8.getDisplay(), Chip8::displayWidth,
-                                    Chip8::displayHeight);
+        if (emuWindow.getRomIsLoaded() && (!emuWindow.getIsPaused())) {
+            emuWindow.runEmuFrame();
         }
 
-        BeginDrawing();
+        emuWindow.drawMenuBar();
+
+        if (GuiDropdownBox(
+                Rectangle{0, 0, 60, (float)emuWindow.getMenubarHeight()},
+                "File;Open;Exit", &emuWindow.menuBar.fileActive,
+                emuWindow.menuBar.fileEditMode)) {
+            emuWindow.menuBar.fileEditMode = !emuWindow.menuBar.fileEditMode;
+
+            switch (emuWindow.menuBar.fileActive) {
+                case 1: {
+                    emuWindow.openFileDialog();
+                    break;
+                }
+
+                case 2: {
+                    CloseWindow();
+                    exit(0);
+                }
+            }
+
+            emuWindow.menuBar.fileActive = 0;
+        }
+
+        if (GuiDropdownBox(
+                Rectangle{60, 0, 85, (float)emuWindow.getMenubarHeight()},
+                "Emulator;Show FPS;Pause;Increase speed;Decrease speed;Reset "
+                "Speed;Reset",
+                &emuWindow.menuBar.emulatorActive,
+                emuWindow.menuBar.emulatorEditMode)) {
+            emuWindow.menuBar.emulatorEditMode =
+                !emuWindow.menuBar.emulatorEditMode;
+
+            switch (emuWindow.menuBar.emulatorActive) {
+                case 1: {
+                    if (emuWindow.getShowFPS())
+                        emuWindow.setShowFPS(false);
+                    else
+                        emuWindow.setShowFPS(true);
+
+                    break;
+                }
+
+                case 2: {
+                    if (emuWindow.getIsPaused())
+                        emuWindow.setIsPaused(false);
+                    else
+                        emuWindow.setIsPaused(true);
+                    break;
+                }
+
+                case 3: {
+                    int speed = emuWindow.getChip8InstPerFrame();
+                    emuWindow.setchip8InstPerFrame(speed + 8);
+                    break;
+                }
+
+                case 4: {
+                    int speed = emuWindow.getChip8InstPerFrame();
+                    emuWindow.setchip8InstPerFrame(speed - 8);
+                    break;
+                }
+
+                case 5: {
+                    emuWindow.resetchip8InstPerFrame();
+                    break;
+                }
+
+                case 6: {
+                    emuWindow.resetEmu();
+                    break;
+                }
+            }
+            emuWindow.menuBar.emulatorActive = 0;
+        }
 
         if (emuWindow.getRomIsLoaded()) {
             emuWindow.drawDisplay();
@@ -59,21 +124,6 @@ int main(int argc, char** argv) {
                               (float)emuWindow.getHeight() -
                                   (float)emuWindow.getMenubarHeight()},
                     "grid", (float)20, 1, &mouseCell);
-        }
-        GuiPanel(Rectangle{0, 0, (float)emuWindow.getWidth()}, nullptr);
-
-        if (GuiDropdownBox(
-                Rectangle{0, 0, 75, (float)emuWindow.getMenubarHeight()},
-                "File;Open;Exit", &emuWindow.menuBar.fileActive,
-                emuWindow.menuBar.fileEditMode)) {
-            std::cout << "File pressed" << std::endl;
-        }
-
-        if (GuiDropdownBox(Rectangle{75 + 0, 0, 75 + 75,
-                                     (float)emuWindow.getMenubarHeight()},
-                           "Emulator;Reset", &emuWindow.menuBar.emulatorActive,
-                           emuWindow.menuBar.emulatorEditMode)) {
-            std::cout << "Emulator presed" << std::endl;
         }
 
         if (IsFileDropped()) {

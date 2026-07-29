@@ -128,7 +128,8 @@ class Chip8 : public EmuBackend {
     void returnFromSubroutine();
 
     void setVarRegister(Opcode opcode);
-    void addValToRegister(Opcode opcode, bool *overflow);
+    void addValToRegister(Opcode opcode);
+    void addValToRegisterOverflow(Opcode opcode);
     void setVXtoVY(Opcode opcode);
     void binaryOr(Opcode opcode);
     void binaryAnd(Opcode opcode);
