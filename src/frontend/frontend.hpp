@@ -19,17 +19,22 @@ class EmuWindow {
     void initDisplay(int width, int height);
     void updateDisplay(const uint8_t *pixels, int width, int height);
     void drawDisplay();
-    void updateKeysPressed();
 
     void closeEmuWindow();
 
     int getWidth() { return windowWidth; }
     int getHeight() { return windowHeight; }
 
+    int getScale() { return scale; }
+    void setScale(int val) { scale = val; }
+
     int getMenuBarWidth() { return menuBarWidth; }
     int getMenubarHeight() { return menuBarHeight; }
 
     void drawMenuBar();
+
+    bool getScaleUpdated() { return scaleUpdated; }
+    void setScaleUpdated(bool val) { scaleUpdated = val; }
 
     bool getShowFPS() { return showFPS; }
     void setShowFPS(bool val) { showFPS = val; }
@@ -49,6 +54,8 @@ class EmuWindow {
     void runEmuFrame();
     void resetEmu();
 
+    std::string getConfigPath();
+
     void checkKeyboardShortcuts();
 
     Chip8 *getChip8Ptr() { return chip8; }
@@ -58,9 +65,11 @@ class EmuWindow {
     struct {
         bool fileEditMode = false;
         bool emulatorEditMode = false;
+        bool viewEditMode = false;
 
         int fileActive = 0;
         int emulatorActive = 0;
+        int viewActive = 0;
     } menuBar;
 
    private:
@@ -72,11 +81,11 @@ class EmuWindow {
 
     int scale = 10;
 
-    int windowWidth = 64 * scale;
-    int windowHeight = 32 * scale;
+    const int chip8DisplayWidth = 64;
+    const int chip8DisplayHeight = 32;
 
-    int chip8DisplayWidth = 64;
-    int chip8DisplayHeight = 32;
+    int windowWidth = chip8DisplayWidth * scale;
+    int windowHeight = chip8DisplayHeight * scale;
 
     int menuBarWidth = windowWidth;
     int menuBarHeight = 20;
@@ -84,6 +93,11 @@ class EmuWindow {
     static constexpr char Header[] = "PolyEmu";
 
     // CHIP8
+
+    bool scaleUpdated = false;
+
+    void updateChip8KeysPressed();
+
     std::vector<Color> pixelBuffer;
     Texture2D displayTexture{};
     std::string chip8RomPath;

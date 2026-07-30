@@ -35,81 +35,6 @@ int main(int argc, char** argv) {
             emuWindow.runEmuFrame();
         }
 
-        emuWindow.drawMenuBar();
-
-        if (GuiDropdownBox(
-                Rectangle{0, 0, 60, (float)emuWindow.getMenubarHeight()},
-                "File;Open;Exit", &emuWindow.menuBar.fileActive,
-                emuWindow.menuBar.fileEditMode)) {
-            emuWindow.menuBar.fileEditMode = !emuWindow.menuBar.fileEditMode;
-
-            switch (emuWindow.menuBar.fileActive) {
-                case 1: {
-                    emuWindow.openFileDialog();
-                    break;
-                }
-
-                case 2: {
-                    CloseWindow();
-                    exit(0);
-                }
-            }
-
-            emuWindow.menuBar.fileActive = 0;
-        }
-
-        if (GuiDropdownBox(
-                Rectangle{60, 0, 85, (float)emuWindow.getMenubarHeight()},
-                "Emulator;Show FPS;Pause;Increase speed;Decrease speed;Reset "
-                "Speed;Reset",
-                &emuWindow.menuBar.emulatorActive,
-                emuWindow.menuBar.emulatorEditMode)) {
-            emuWindow.menuBar.emulatorEditMode =
-                !emuWindow.menuBar.emulatorEditMode;
-
-            switch (emuWindow.menuBar.emulatorActive) {
-                case 1: {
-                    if (emuWindow.getShowFPS())
-                        emuWindow.setShowFPS(false);
-                    else
-                        emuWindow.setShowFPS(true);
-
-                    break;
-                }
-
-                case 2: {
-                    if (emuWindow.getIsPaused())
-                        emuWindow.setIsPaused(false);
-                    else
-                        emuWindow.setIsPaused(true);
-                    break;
-                }
-
-                case 3: {
-                    int speed = emuWindow.getChip8InstPerFrame();
-                    emuWindow.setchip8InstPerFrame(speed + 8);
-                    break;
-                }
-
-                case 4: {
-                    int speed = emuWindow.getChip8InstPerFrame();
-                    emuWindow.setchip8InstPerFrame(speed - 8);
-                    break;
-                }
-
-                case 5: {
-                    emuWindow.resetchip8InstPerFrame();
-                    break;
-                }
-
-                case 6: {
-                    emuWindow.resetEmu();
-                    break;
-                }
-            }
-            emuWindow.menuBar.emulatorActive = 0;
-        }
-
         if (emuWindow.getRomIsLoaded()) {
             emuWindow.drawDisplay();
 
@@ -138,7 +63,14 @@ int main(int argc, char** argv) {
             emuWindow.handleROM(filePath);
             UnloadDroppedFiles(droppedFiles);
         }
+        emuWindow.drawMenuBar();
+
         EndDrawing();
+
+        if (emuWindow.getScaleUpdated()) {
+            SetWindowSize(emuWindow.getScale() * 64, emuWindow.getScale() * 32);
+            emuWindow.setScaleUpdated(false);
+        }
     }
 
     CloseWindow();

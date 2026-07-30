@@ -1,8 +1,7 @@
 #include "frontend.hpp"
 
 #include <cstdint>
-#include <cstdio>
-#include <iterator>
+#include <cstdlib>
 #include <nfd.hpp>
 
 #include "nativefiledialog-extended/src/include/nfd.h"
@@ -46,14 +45,14 @@ void EmuWindow::drawDisplay() {
     Rectangle dest = {
         0,
         (float)menuBarHeight,
-        (float)windowWidth,
-        (float)(windowHeight - menuBarHeight),
+        (float)GetScreenWidth(),
+        (float)(GetScreenHeight() - menuBarHeight),
     };
 
     DrawTexturePro(displayTexture, src, dest, {0, 0}, 0, WHITE);
 }
 
-void EmuWindow::updateKeysPressed() {
+void EmuWindow::updateChip8KeysPressed() {
     for (int i = 0; i < 16; i++) {
         getChip8Ptr()->setKeyState(i, IsKeyDown(Chip8keymap[i]));
     }
@@ -81,7 +80,7 @@ void EmuWindow::handleROM(const std::string filePath) {
 }
 
 void EmuWindow::runEmuFrame() {
-    updateKeysPressed();
+    updateChip8KeysPressed();
 
     for (int i = 0; i < getChip8InstPerFrame(); i++) {
         Opcode opcode = chip8->getOpcode();
@@ -128,10 +127,121 @@ void EmuWindow::checkKeyboardShortcuts() {
     }
 }
 
-// TODO: moving menu bar buttons here does not work
+std::string EmuWindow::getConfigPath() {
+    std::string configPath;
+
+#if defined(__linux__)
+    char *home = std::getenv("HOME");
+    if (home != NULL) {
+        configPath = std::string(home) + "./config/PolyEmu.conf";
+    } else {
+    }
+#endif
+
+    return configPath;
+}
+
 void EmuWindow::drawMenuBar() {
-    GuiPanel(Rectangle{0, 0, (float)getWidth(), (float)getMenubarHeight()},
-             nullptr);
+    GuiPanel(
+        Rectangle{0, 0, (float)GetScreenWidth(), (float)getMenubarHeight()},
+        nullptr);
+
+    if (GuiDropdownBox(Rectangle{0, 0, 60, (float)getMenubarHeight()},
+                       "File;Open;Exit", &menuBar.fileActive,
+                       menuBar.fileEditMode)) {
+        menuBar.fileEditMode = !menuBar.fileEditMode;
+
+        std::cout << "file: " << menuBar.fileActive << std::endl;
+
+        switch (menuBar.fileActive) {
+            case 1: {
+                openFileDialog();
+                break;
+            }
+
+            case 2: {
+                CloseWindow();
+                exit(0);
+            }
+        }
+
+        menuBar.fileActive = 0;
+    }
+
+    if (GuiDropdownBox(
+            Rectangle{60, 0, 85, (float)getMenubarHeight()},
+            "Emulator;Show FPS;Pause;Increase speed;Decrease speed;Reset "
+            "Speed;Reset",
+            &menuBar.emulatorActive, menuBar.emulatorEditMode)) {
+        menuBar.emulatorEditMode = !menuBar.emulatorEditMode;
+
+        switch (menuBar.emulatorActive) {
+            case 1: {
+                if (getShowFPS())
+                    setShowFPS(false);
+                else
+                    setShowFPS(true);
+
+                break;
+            }
+
+            case 2: {
+                if (getIsPaused())
+                    setIsPaused(false);
+                else
+                    setIsPaused(true);
+                break;
+            }
+
+            case 3: {
+                int speed = getChip8InstPerFrame();
+                setchip8InstPerFrame(speed + 8);
+                break;
+            }
+
+            case 4: {
+                int speed = getChip8InstPerFrame();
+                setchip8InstPerFrame(speed - 8);
+                break;
+            }
+
+            case 5: {
+                resetchip8InstPerFrame();
+                break;
+            }
+
+            case 6: {
+                resetEmu();
+                break;
+            }
+        }
+        menuBar.emulatorActive = 0;
+    }
+
+    if (GuiDropdownBox(Rectangle{60 + 85, 0, 85, (float)getMenubarHeight()},
+                       "View;Increase Scale;Decrease Scale",
+                       &menuBar.viewActive, menuBar.viewEditMode)) {
+        menuBar.viewEditMode = !menuBar.viewEditMode;
+
+        switch (menuBar.viewActive) {
+            case 1: {
+                int tempScale = getScale();
+                setScale(tempScale + 1);
+
+                setScaleUpdated(true);
+                break;
+            }
+            case 2: {
+                int tempScale = getScale();
+                setScale(tempScale - 1);
+
+                setScaleUpdated(true);
+                break;
+            }
+        }
+
+        menuBar.viewActive = 0;
+    }
 }
 
 void EmuWindow::resetEmu() {
