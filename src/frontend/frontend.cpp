@@ -2,7 +2,12 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <nfd.hpp>
+#include <sstream>
+#include <string>
 
 #include "nativefiledialog-extended/src/include/nfd.h"
 #include "raygui.h"
@@ -12,7 +17,7 @@ void EmuWindow::init() {
     //  TODO: autoscale content
     // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(windowWidth, windowHeight, this->Header);
-    SetTargetFPS(this->targetFPS);
+    SetTargetFPS(this->config.targetFPS);
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(WHITE));
 }
 
@@ -125,20 +130,109 @@ void EmuWindow::checkKeyboardShortcuts() {
         std::cout << "Window: Ctrl + R pressed" << std::endl;
         resetEmu();
     }
+
+    return;
+}
+
+void EmuWindow::initConfig() {
+    std::string configPath = getConfigPath();
+
+    if (configPath == "") {
+        std::cerr << "Error: Could not init config due to invalid config path"
+                  << std::endl;
+        return;
+    }
+
+    std::filesystem::path filePath = configPath;
+
+    if (std::filesystem::exists(filePath)) {
+        loadConfig(configPath);
+    } else {
+        saveConfig(configPath);
+    }
+
+    return;
 }
 
 std::string EmuWindow::getConfigPath() {
-    std::string configPath;
+    std::string configPath = "";
 
 #if defined(__linux__)
     char *home = std::getenv("HOME");
-    if (home != NULL) {
+    if (home != NULL)
         configPath = std::string(home) + "./config/PolyEmu.conf";
-    } else {
-    }
+    else
+        std::cerr << "Error: Could not get home path for linux" << std::endl;
+
+#elif defined(_WIN32)
+    char *appdata = std::getenv("APPDATA");
+
+    if (appdata != NULL)
+        configPath = std::string(appdata) + "\\PolyEmu.conf";
+    else
+        std::cerr << "Error: Could not get appdata path for windows"
+                  << std::endl;
+
+#else
+    std::cerr << "Error: Compiled for unknown OS" << std::endl;
+
 #endif
 
     return configPath;
+}
+
+void EmuWindow::loadConfig(std::string configPath) {
+    std::ifstream file(configPath);
+    std::string line;
+
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '#') continue;
+
+        std::istringstream lineStream(line);
+        std::string var;
+        std::string val;
+
+        if (std::getline(lineStream, var, '=')) {
+            if (std::getline(lineStream, val)) {
+                if (var == "showFPS") {
+                    if (val == "1" || val == "true")
+                        config.showFPS = true;
+                    else
+                        config.showFPS = false;
+
+                    std::cout << "Loaded config showFPS: " << config.showFPS
+                              << std::endl;
+
+                } else if (var == "targetFPS") {
+                    config.targetFPS = std::stoi(val);
+
+                    std::cout << "Loaded config targetFPS: " << config.targetFPS
+                              << std::endl;
+                } else {
+                    std::cerr
+                        << "Warning: Unknown variable in config file: " << var
+                        << std::endl;
+                }
+            }
+        }
+    }
+
+    file.close();
+}
+
+void EmuWindow::saveConfig(std::string configPath) {
+    std::ofstream file(configPath);
+
+    if (!file.is_open())
+        std::cerr << "Error: Could not open config file: " << configPath
+                  << std::endl;
+
+    file << "showFPS=" << config.showFPS << '\n';
+    file << "targetFPS=" << config.targetFPS << '\n';
+
+    file.close();
+
+    return;
 }
 
 void EmuWindow::drawMenuBar() {

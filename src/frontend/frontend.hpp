@@ -36,8 +36,8 @@ class EmuWindow {
     bool getScaleUpdated() { return scaleUpdated; }
     void setScaleUpdated(bool val) { scaleUpdated = val; }
 
-    bool getShowFPS() { return showFPS; }
-    void setShowFPS(bool val) { showFPS = val; }
+    bool getShowFPS() { return config.showFPS; }
+    void setShowFPS(bool val) { config.showFPS = val; }
 
     bool getIsPaused() { return isPaused; }
     void setIsPaused(bool val) { isPaused = val; }
@@ -54,7 +54,10 @@ class EmuWindow {
     void runEmuFrame();
     void resetEmu();
 
+    void initConfig();
     std::string getConfigPath();
+    void loadConfig(std::string configPath);
+    void saveConfig(std::string configPath);
 
     void checkKeyboardShortcuts();
 
@@ -62,6 +65,7 @@ class EmuWindow {
     void setChip8Ptr(Chip8 *chip8) { this->chip8 = chip8; }
     std::string gettChip8RomPath() { return chip8RomPath; }
 
+   private:
     struct {
         bool fileEditMode = false;
         bool emulatorEditMode = false;
@@ -72,12 +76,13 @@ class EmuWindow {
         int viewActive = 0;
     } menuBar;
 
-   private:
+    struct {
+        bool showFPS = false;
+        int targetFPS = 60;
+    } config;
+
     bool romIsLoaded = false;
     bool isPaused = false;
-
-    bool showFPS = false;
-    int targetFPS = 60;
 
     int scale = 10;
 
