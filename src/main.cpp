@@ -8,6 +8,8 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
+// TODO: init chip8 from window
+
 int main(int argc, char** argv) {
     Chip8 chip8;
 
@@ -17,7 +19,6 @@ int main(int argc, char** argv) {
     emuWindow.init();
     emuWindow.initDisplay(Chip8::displayWidth, Chip8::displayHeight);
     emuWindow.setChip8Ptr(&chip8);
-    // TODO: init chip8 from window
 
     if (argc > 1) {
         if (argc != 2)
@@ -41,7 +42,7 @@ int main(int argc, char** argv) {
             if (emuWindow.getShowFPS())
                 DrawText(TextFormat("fps: %d", GetFPS()), 30, 30, 20, RED);
         } else {
-            ClearBackground(LIGHTGRAY);
+            ClearBackground(WHITE);
             DrawText("Drag and drop ROMs here", 200, 200, 20, BLACK);
 
             GuiGrid(Rectangle{0, (float)emuWindow.getHeight(),
@@ -55,8 +56,7 @@ int main(int argc, char** argv) {
             FilePathList droppedFiles = LoadDroppedFiles();
 
             if (droppedFiles.count > 1) {
-                std::cout << "Error: Cannot open multiple files" << std::endl;
-                exit(1);
+                std::cout << "Warning: Cannot open multiple files" << std::endl;
             }
 
             std::string filePath = droppedFiles.paths[0];
@@ -67,10 +67,7 @@ int main(int argc, char** argv) {
 
         EndDrawing();
 
-        if (emuWindow.getScaleUpdated()) {
-            SetWindowSize(emuWindow.getScale() * 64, emuWindow.getScale() * 32);
-            emuWindow.setScaleUpdated(false);
-        }
+        if (emuWindow.getScaleUpdated()) emuWindow.updateChip8Scale();
     }
 
     CloseWindow();

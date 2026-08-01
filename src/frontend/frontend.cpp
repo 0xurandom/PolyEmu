@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -14,9 +15,12 @@
 #include "raylib.h"
 
 void EmuWindow::init() {
+    initConfig();
     //  TODO: autoscale content
     // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(windowWidth, windowHeight, this->Header);
+    InitWindow(chip8DisplayWidth * config.chip8Scale,
+               chip8DisplayHeight * config.chip8Scale, this->Header);
+    std::cout << "scale: " << config.chip8Scale << std::endl;
     SetTargetFPS(this->config.targetFPS);
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(WHITE));
 }
@@ -87,15 +91,25 @@ void EmuWindow::handleROM(const std::string filePath) {
 void EmuWindow::runEmuFrame() {
     updateChip8KeysPressed();
 
-    for (int i = 0; i < getChip8InstPerFrame(); i++) {
+    int speed;
+
+    if (inFF)
+        speed = getChip8InstPerFrame() + chip8FFincrement;
+    else
+        speed = getChip8InstPerFrame();
+
+    for (int i = 0; i < speed; i++) {
         Opcode opcode = chip8->getOpcode();
         chip8->handleOpcode(opcode);
     }
+
     chip8->runTimers();
 
     updateDisplay(chip8->getDisplay(), Chip8::displayWidth,
                   Chip8::displayHeight);
 }
+
+void EmuWindow::displayFFIndicator() { GuiPanel(Rectangle{}, "FF >>") }
 
 void EmuWindow::openFileDialog() {
     NFD_Init();
@@ -131,7 +145,19 @@ void EmuWindow::checkKeyboardShortcuts() {
         resetEmu();
     }
 
+    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
+        IsKeyDown(KEY_EQUAL))
+        inFF = true;
+    else
+        inFF = false;
+
     return;
+}
+
+void EmuWindow::updateChip8Scale() {
+    SetWindowSize(getChip8Scale() * chip8DisplayWidth,
+                  getChip8Scale() * chip8DisplayHeight);
+    setScaleUpdated(false);
 }
 
 void EmuWindow::initConfig() {
@@ -160,7 +186,7 @@ std::string EmuWindow::getConfigPath() {
 #if defined(__linux__)
     char *home = std::getenv("HOME");
     if (home != NULL)
-        configPath = std::string(home) + "./config/PolyEmu.conf";
+        configPath = std::string(home) + "/.config/PolyEmu.conf";
     else
         std::cerr << "Error: Could not get home path for linux" << std::endl;
 
@@ -208,6 +234,18 @@ void EmuWindow::loadConfig(std::string configPath) {
 
                     std::cout << "Loaded config targetFPS: " << config.targetFPS
                               << std::endl;
+                } else if (var == "chip8Scale") {
+                    config.chip8Scale = std::stoi(val);
+
+                    std::cout
+                        << "Loaded config chip8Scale: " << config.chip8Scale
+                        << std::endl;
+                } else if (var == "chip8InstPerFrame") {
+                    config.chip8InstPerFrame = std::stoi(val);
+
+                    std::cout << "Loaded chip8InstPerFrame: "
+                              << config.chip8InstPerFrame << std::endl;
+
                 } else {
                     std::cerr
                         << "Warning: Unknown variable in config file: " << var
@@ -223,12 +261,20 @@ void EmuWindow::loadConfig(std::string configPath) {
 void EmuWindow::saveConfig(std::string configPath) {
     std::ofstream file(configPath);
 
-    if (!file.is_open())
-        std::cerr << "Error: Could not open config file: " << configPath
-                  << std::endl;
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open config file [" << configPath
+                  << "] :" << std::strerror(errno) << std::endl;
+
+        std::cout << "Creating config file: " << configPath << std::endl;
+    }
 
     file << "showFPS=" << config.showFPS << '\n';
     file << "targetFPS=" << config.targetFPS << '\n';
+
+    file << '\n';
+
+    file << "chip8Scale=" << config.chip8Scale << '\n';
+    file << "chip8InstPerFrame=" << config.chip8InstPerFrame << '\n';
 
     file.close();
 
@@ -319,15 +365,15 @@ void EmuWindow::drawMenuBar() {
 
         switch (menuBar.viewActive) {
             case 1: {
-                int tempScale = getScale();
-                setScale(tempScale + 1);
+                int tempScale = getChip8Scale();
+                setChip8Scale(tempScale + 1);
 
                 setScaleUpdated(true);
                 break;
             }
             case 2: {
-                int tempScale = getScale();
-                setScale(tempScale - 1);
+                int tempScale = getChip8Scale();
+                setChip8Scale(tempScale - 1);
 
                 setScaleUpdated(true);
                 break;

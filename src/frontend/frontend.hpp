@@ -25,8 +25,9 @@ class EmuWindow {
     int getWidth() { return windowWidth; }
     int getHeight() { return windowHeight; }
 
-    int getScale() { return scale; }
-    void setScale(int val) { scale = val; }
+    int getChip8Scale() { return config.chip8Scale; }
+    void setChip8Scale(int val) { config.chip8Scale = val; }
+    void updateChip8Scale();
 
     int getMenuBarWidth() { return menuBarWidth; }
     int getMenubarHeight() { return menuBarHeight; }
@@ -54,6 +55,8 @@ class EmuWindow {
     void runEmuFrame();
     void resetEmu();
 
+    void displayFFIndicator();
+
     void initConfig();
     std::string getConfigPath();
     void loadConfig(std::string configPath);
@@ -79,18 +82,22 @@ class EmuWindow {
     struct {
         bool showFPS = false;
         int targetFPS = 60;
+
+        int chip8Scale = 10;
+        int chip8InstPerFrame = 11;
     } config;
 
     bool romIsLoaded = false;
     bool isPaused = false;
-
-    int scale = 10;
+    bool inFF = false;
 
     const int chip8DisplayWidth = 64;
     const int chip8DisplayHeight = 32;
 
-    int windowWidth = chip8DisplayWidth * scale;
-    int windowHeight = chip8DisplayHeight * scale;
+    const int chip8FFincrement = 8;
+
+    int windowWidth = chip8DisplayWidth * config.chip8Scale;
+    int windowHeight = chip8DisplayHeight * config.chip8Scale;
 
     int menuBarWidth = windowWidth;
     int menuBarHeight = 20;
