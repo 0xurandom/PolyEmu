@@ -55,6 +55,7 @@ class EmuWindow {
     void runEmuFrame();
     void resetEmu();
 
+    void displayIndicator(std::string indicator);
     void displayFFIndicator();
 
     void initConfig();

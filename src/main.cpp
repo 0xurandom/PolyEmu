@@ -43,14 +43,36 @@ int main(int argc, char** argv) {
                 DrawText(TextFormat("fps: %d", GetFPS()), 30, 30, 20, RED);
         } else {
             ClearBackground(WHITE);
-            DrawText("Drag and drop ROMs here", 200, 200, 20, BLACK);
 
-            GuiGrid(Rectangle{0, (float)emuWindow.getHeight(),
-                              (float)emuWindow.getWidth(),
-                              (float)emuWindow.getHeight() -
-                                  (float)emuWindow.getMenubarHeight()},
-                    "grid", (float)20, 1, &mouseCell);
+            std::string greetingText =
+                "Drag and drop ROMs here\n\n"
+                "             or\n\n"
+                "  Press Ctrl + O to open\n\n";
+
+            double fontSize = 20.0f;
+
+            Vector2 textSize = MeasureTextEx(
+                GetFontDefault(), greetingText.c_str(), fontSize, 2.0f);
+
+            DrawTextEx(
+                GetFontDefault(), greetingText.c_str(),
+                Vector2{
+                    static_cast<float>(GetScreenWidth()) / 2 - (textSize.x / 2),
+                    (static_cast<float>(GetScreenHeight()) -
+                     emuWindow.getMenubarHeight()) /
+                            2 -
+                        (textSize.y / 2),
+                },
+                fontSize, 2.0f, BLACK);
+
+            GuiGrid(
+                Rectangle{0, (float)GetScreenHeight(), (float)GetScreenWidth(),
+                          (float)GetScreenHeight() -
+                              (float)emuWindow.getMenubarHeight()},
+                "grid", (float)20, 1, &mouseCell);
         }
+
+        emuWindow.displayIndicator("hello");
 
         if (IsFileDropped()) {
             FilePathList droppedFiles = LoadDroppedFiles();

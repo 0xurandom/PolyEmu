@@ -1,5 +1,6 @@
 #include "frontend.hpp"
 
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -109,7 +110,28 @@ void EmuWindow::runEmuFrame() {
                   Chip8::displayHeight);
 }
 
-void EmuWindow::displayFFIndicator() { GuiPanel(Rectangle{}, "FF >>") }
+void EmuWindow::displayFFIndicator() { GuiPanel(Rectangle{}, "FF >>"); }
+
+void EmuWindow::displayIndicator(std::string indicator) {
+    const float panelWidth = 30 * getChip8Scale();
+    const float panelHeight = 10 * getChip8Scale();
+
+    // GuiPanel(Rectangle{static_cast<float>(GetScreenWidth() - panelWidth)
+    // / 2.0f,
+    //                    static_cast<float>(GetScreenHeight() -
+    //                                       getMenubarHeight() - panelHeight) /
+    //                        2.0f,
+    //                    panelWidth, panelHeight},
+    //          indicator.c_str());
+
+    DrawRectangleRounded(
+        Rectangle{static_cast<float>(GetScreenWidth() - panelWidth) / 2.0f,
+                  static_cast<float>(GetScreenHeight() - getMenubarHeight() -
+                                     panelHeight) /
+                      2.0f,
+                  panelWidth, panelHeight},
+        0.2f, 10, Fade(BLACK, 0.5F));
+}
 
 void EmuWindow::openFileDialog() {
     NFD_Init();
@@ -290,8 +312,6 @@ void EmuWindow::drawMenuBar() {
                        "File;Open;Exit", &menuBar.fileActive,
                        menuBar.fileEditMode)) {
         menuBar.fileEditMode = !menuBar.fileEditMode;
-
-        std::cout << "file: " << menuBar.fileActive << std::endl;
 
         switch (menuBar.fileActive) {
             case 1: {
