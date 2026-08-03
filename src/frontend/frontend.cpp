@@ -24,6 +24,7 @@ void EmuWindow::init() {
     std::cout << "scale: " << config.chip8Scale << std::endl;
     SetTargetFPS(this->config.targetFPS);
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(WHITE));
+    SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
 }
 
 void EmuWindow::initDisplay(int width, int height) {
@@ -110,27 +111,64 @@ void EmuWindow::runEmuFrame() {
                   Chip8::displayHeight);
 }
 
-void EmuWindow::displayFFIndicator() { GuiPanel(Rectangle{}, "FF >>"); }
+void EmuWindow::drawGreeting() {
+    std::string greetingText =
+        "Drag and drop ROMs here\n\n"
+        "             or\n\n"
+        "  Press Ctrl + O to open\n\n";
+
+    double fontSize = 20.0f;
+
+    Vector2 textSize =
+        MeasureTextEx(GetFontDefault(), greetingText.c_str(), fontSize, 2.0f);
+
+    DrawTextEx(
+        GetFontDefault(), greetingText.c_str(),
+        Vector2{
+            static_cast<float>(GetScreenWidth()) / 2 - (textSize.x / 2),
+            (static_cast<float>(GetScreenHeight()) - getMenubarHeight()) / 2 -
+                (textSize.y / 2),
+        },
+        fontSize, 2.0f, BLACK);
+}
+
+void EmuWindow::drawFPS() {
+    DrawText(TextFormat("fps: %d", GetFPS()), 30, 30, 20, RED);
+}
+
+void EmuWindow::displayFFIndicator() { displayIndicator(">> fastforward >>"); }
+
+void EmuWindow::displayPauseIndicator() { displayIndicator("| | paused | |"); }
 
 void EmuWindow::displayIndicator(std::string indicator) {
-    const float panelWidth = 30 * getChip8Scale();
-    const float panelHeight = 10 * getChip8Scale();
+    float fontSize = 20.0f;
+    float spacing = 0.0f;
 
-    // GuiPanel(Rectangle{static_cast<float>(GetScreenWidth() - panelWidth)
-    // / 2.0f,
-    //                    static_cast<float>(GetScreenHeight() -
-    //                                       getMenubarHeight() - panelHeight) /
-    //                        2.0f,
-    //                    panelWidth, panelHeight},
-    //          indicator.c_str());
+    float paddingX = 30.0f;
+    float paddingY = 16.0f;
+
+    Vector2 textSize =
+        MeasureTextEx(GetFontDefault(), indicator.c_str(), fontSize, spacing);
+
+    const float panelWidth = textSize.x + paddingX;
+    const float panelHeight = textSize.y + paddingY;
+
+    const float rectangleX =
+        (static_cast<float>(GetScreenWidth()) - panelWidth) / 2.0f;
+    const float rectangleY =
+        getMenubarHeight() +
+        (static_cast<float>(GetScreenHeight() - getMenubarHeight() -
+                            panelHeight) /
+         8.0f);
 
     DrawRectangleRounded(
-        Rectangle{static_cast<float>(GetScreenWidth() - panelWidth) / 2.0f,
-                  static_cast<float>(GetScreenHeight() - getMenubarHeight() -
-                                     panelHeight) /
-                      2.0f,
-                  panelWidth, panelHeight},
-        0.2f, 10, Fade(BLACK, 0.5F));
+        Rectangle{rectangleX, rectangleY, panelWidth, panelHeight}, 0.2f, 10,
+        Fade(BLACK, 0.5F));
+
+    DrawTextEx(
+        GetFontDefault(), indicator.c_str(),
+        Vector2{rectangleX + (paddingX / 2.0f), rectangleY + (paddingY / 2.0f)},
+        fontSize, spacing, WHITE);
 }
 
 void EmuWindow::openFileDialog() {
@@ -167,6 +205,13 @@ void EmuWindow::checkKeyboardShortcuts() {
         resetEmu();
     }
 
+    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
+        IsKeyPressed(KEY_P)) {
+        std::cout << "Window: Ctrl + P pressed" << std::endl;
+        toggleIsPaused();
+    }
+
+    // Fastforward: Ctrl + '='
     if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
         IsKeyDown(KEY_EQUAL))
         inFF = true;
@@ -346,10 +391,7 @@ void EmuWindow::drawMenuBar() {
             }
 
             case 2: {
-                if (getIsPaused())
-                    setIsPaused(false);
-                else
-                    setIsPaused(true);
+                toggleIsPaused();
                 break;
             }
 

@@ -517,7 +517,7 @@ void Chip8::getKey(Opcode opcode) {
 void Chip8::setFont(Opcode opcode) {
     uint8_t num = V[opcode.X];
 
-    I = 0x050 + (num * 5);
+    I = 0x50 + (num * 5);
 }
 
 void Chip8::binaryDecimalConversion(Opcode opcode) {
@@ -551,5 +551,5 @@ bool Chip8::isChip8KeyPressed() {
 }
 
 void Chip8::loadFonts() {
-    std::copy(std::begin(fonts), std::end(fonts), ram + 0x050);
+    std::copy(std::begin(fonts), std::end(fonts), ram + 0x50);
 }

@@ -39,31 +39,16 @@ int main(int argc, char** argv) {
         if (emuWindow.getRomIsLoaded()) {
             emuWindow.drawDisplay();
 
-            if (emuWindow.getShowFPS())
-                DrawText(TextFormat("fps: %d", GetFPS()), 30, 30, 20, RED);
+            if (emuWindow.getShowFPS()) emuWindow.drawFPS();
+
+            if (emuWindow.getIsPaused()) emuWindow.displayPauseIndicator();
+
+            if (emuWindow.getInFF()) emuWindow.displayFFIndicator();
+
         } else {
             ClearBackground(WHITE);
 
-            std::string greetingText =
-                "Drag and drop ROMs here\n\n"
-                "             or\n\n"
-                "  Press Ctrl + O to open\n\n";
-
-            double fontSize = 20.0f;
-
-            Vector2 textSize = MeasureTextEx(
-                GetFontDefault(), greetingText.c_str(), fontSize, 2.0f);
-
-            DrawTextEx(
-                GetFontDefault(), greetingText.c_str(),
-                Vector2{
-                    static_cast<float>(GetScreenWidth()) / 2 - (textSize.x / 2),
-                    (static_cast<float>(GetScreenHeight()) -
-                     emuWindow.getMenubarHeight()) /
-                            2 -
-                        (textSize.y / 2),
-                },
-                fontSize, 2.0f, BLACK);
+            emuWindow.drawGreeting();
 
             GuiGrid(
                 Rectangle{0, (float)GetScreenHeight(), (float)GetScreenWidth(),
@@ -71,8 +56,6 @@ int main(int argc, char** argv) {
                               (float)emuWindow.getMenubarHeight()},
                 "grid", (float)20, 1, &mouseCell);
         }
-
-        emuWindow.displayIndicator("hello");
 
         if (IsFileDropped()) {
             FilePathList droppedFiles = LoadDroppedFiles();

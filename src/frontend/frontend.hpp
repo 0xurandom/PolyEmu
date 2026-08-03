@@ -42,6 +42,10 @@ class EmuWindow {
 
     bool getIsPaused() { return isPaused; }
     void setIsPaused(bool val) { isPaused = val; }
+    void toggleIsPaused() { isPaused = !isPaused; }
+
+    bool getInFF() { return inFF; }
+    void setInFF(bool val) { inFF = val; }
 
     int getChip8InstPerFrame() { return chip8InstPerFrame; }
     void setchip8InstPerFrame(int val) { chip8InstPerFrame = val; }
@@ -55,8 +59,11 @@ class EmuWindow {
     void runEmuFrame();
     void resetEmu();
 
-    void displayIndicator(std::string indicator);
+    void drawGreeting();
+    void drawFPS();
     void displayFFIndicator();
+    void displayPauseIndicator();
+    void displayIndicator(std::string indicator);
 
     void initConfig();
     std::string getConfigPath();
