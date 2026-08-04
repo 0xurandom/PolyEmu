@@ -29,6 +29,10 @@ class EmuWindow {
     void setChip8Scale(int val) { config.chip8Scale = val; }
     void updateChip8Scale();
 
+    void resizeToRatio();
+    void toggleBorderlessWindow();
+    void toggleFullscreen();
+
     int getMenuBarWidth() { return menuBarWidth; }
     int getMenubarHeight() { return menuBarHeight; }
 
@@ -36,6 +40,9 @@ class EmuWindow {
 
     bool getScaleUpdated() { return scaleUpdated; }
     void setScaleUpdated(bool val) { scaleUpdated = val; }
+
+    bool getFullscreenToggle() { return fullscreenToggle; }
+    void setFullscreenToggle(bool val) { fullscreenToggle = val; }
 
     bool getShowFPS() { return config.showFPS; }
     void setShowFPS(bool val) { config.showFPS = val; }
@@ -52,6 +59,7 @@ class EmuWindow {
     void resetchip8InstPerFrame() { chip8InstPerFrame = defaultInstPerFrame; }
 
     void openFileDialog();
+    std::string getRomName(const std::string filePath);
     void handleROM(const std::string filePath);
     bool getRomIsLoaded() { return romIsLoaded; }
     void setRomIsLoaded(bool val) { romIsLoaded = val; }
@@ -98,6 +106,8 @@ class EmuWindow {
     bool romIsLoaded = false;
     bool isPaused = false;
     bool inFF = false;
+
+    bool fullscreenToggle = false;
 
     const int chip8DisplayWidth = 64;
     const int chip8DisplayHeight = 32;

@@ -1,5 +1,6 @@
 #include "frontend.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -17,11 +18,10 @@
 
 void EmuWindow::init() {
     initConfig();
-    //  TODO: autoscale content
-    // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(chip8DisplayWidth * config.chip8Scale,
                chip8DisplayHeight * config.chip8Scale, this->Header);
-    std::cout << "scale: " << config.chip8Scale << std::endl;
+    SetWindowMinSize(64 * 8, 32 * 8);
     SetTargetFPS(this->config.targetFPS);
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(WHITE));
     SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
@@ -50,15 +50,34 @@ void EmuWindow::updateDisplay(const uint8_t *pixels, int width, int height) {
 }
 
 void EmuWindow::drawDisplay() {
-    Rectangle src = {0, 0, (float)displayTexture.width,
-                     (float)displayTexture.height};
+    float availableWidth = static_cast<float>(GetScreenWidth());
+    float availableHeight =
+        static_cast<float>(GetScreenHeight() - getMenubarHeight());
 
-    Rectangle dest = {
-        0,
-        (float)menuBarHeight,
-        (float)GetScreenWidth(),
-        (float)(GetScreenHeight() - menuBarHeight),
-    };
+    DrawRectangle(0, getMenubarHeight(), availableWidth, availableHeight,
+                  DARKGRAY);
+
+    float gameWidth = static_cast<float>(displayTexture.width);
+    float gameHeight = static_cast<float>(displayTexture.height);
+
+    float scaleX = availableWidth / gameWidth;
+    float scaleY = availableHeight / gameHeight;
+
+    float scale = 0;
+    if (scaleX < scaleY)
+        scale = scaleX;
+    else
+        scale = scaleY;
+
+    float scaledWidth = gameWidth * scale;
+    float scaledHeight = gameHeight * scale;
+
+    float offsetX = (availableWidth - scaledWidth) / 2.0f;
+    float offsetY =
+        getMenubarHeight() + ((availableHeight - scaledHeight) / 2.0f);
+
+    Rectangle src = {0, 0, gameWidth, gameHeight};
+    Rectangle dest = {offsetX, offsetY, scaledWidth, scaledHeight};
 
     DrawTexturePro(displayTexture, src, dest, {0, 0}, 0, WHITE);
 }
@@ -67,6 +86,14 @@ void EmuWindow::updateChip8KeysPressed() {
     for (int i = 0; i < 16; i++) {
         getChip8Ptr()->setKeyState(i, IsKeyDown(Chip8keymap[i]));
     }
+}
+
+std::string EmuWindow::getRomName(const std::string filePath) {
+    int lastSlashIndex = filePath.rfind('/');
+    int fileExtensionIndex = filePath.rfind('.');
+
+    return filePath.substr(lastSlashIndex + 1,
+                           (fileExtensionIndex - lastSlashIndex - 1));
 }
 
 void EmuWindow::handleROM(const std::string filePath) {
@@ -82,6 +109,7 @@ void EmuWindow::handleROM(const std::string filePath) {
                       << std::endl;
             chip8RomPath = filePath;
             setRomIsLoaded(true);
+            SetWindowTitle(getRomName(filePath).c_str());
         } else {
             std::cerr << "Error: Couldn't load chip8 rom" << std::endl;
         }
@@ -219,6 +247,23 @@ void EmuWindow::checkKeyboardShortcuts() {
         inFF = false;
 
     return;
+}
+
+void EmuWindow::toggleBorderlessWindow() {
+    int width = GetScreenWidth();
+    int height = GetScreenHeight();
+
+    Vector2 position = GetWindowPosition();
+
+    ToggleBorderlessWindowed();
+
+    SetWindowSize(width, height);
+    SetWindowPosition(position.x, position.y);
+}
+
+void EmuWindow::toggleFullscreen() {
+    toggleFullscreen();
+    fullscreenToggle = false;
 }
 
 void EmuWindow::updateChip8Scale() {
@@ -421,19 +466,31 @@ void EmuWindow::drawMenuBar() {
     }
 
     if (GuiDropdownBox(Rectangle{60 + 85, 0, 85, (float)getMenubarHeight()},
-                       "View;Increase Scale;Decrease Scale",
+                       "View;Toggle Fullscreen;Toggle Borderless "
+                       "Window;Increase Scale;Decrease Scale",
                        &menuBar.viewActive, menuBar.viewEditMode)) {
         menuBar.viewEditMode = !menuBar.viewEditMode;
 
         switch (menuBar.viewActive) {
             case 1: {
+                fullscreenToggle = true;
+
+                break;
+            }
+
+            case 2: {
+                toggleBorderlessWindow();
+                break;
+            }
+
+            case 3: {
                 int tempScale = getChip8Scale();
                 setChip8Scale(tempScale + 1);
 
                 setScaleUpdated(true);
                 break;
             }
-            case 2: {
+            case 4: {
                 int tempScale = getChip8Scale();
                 setChip8Scale(tempScale - 1);
 

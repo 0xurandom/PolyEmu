@@ -45,6 +45,8 @@ enum class Chip8Key {
 
 class Chip8 : public EmuBackend {
    public:
+    Chip8() { reset(); }
+
     bool loadROM(const std::string &filepath) override;
 
     Opcode getOpcode();

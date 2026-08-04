@@ -346,6 +346,8 @@ void Chip8::reset() {
     memset(stack, 0, sizeof(stack));
     memset(V, 0, sizeof(V));
 
+    loadFonts();
+
     I = 0;
     sp = 0;
     pc = 0x200;
