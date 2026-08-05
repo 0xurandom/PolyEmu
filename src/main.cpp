@@ -76,6 +76,8 @@ int main(int argc, char** argv) {
         if (emuWindow.getFullscreenToggle()) emuWindow.toggleFullscreen();
     }
 
+    emuWindow.saveConfig(emuWindow.getConfigPath());
+
     CloseWindow();
 
     return 0;

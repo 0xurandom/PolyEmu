@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <nfd.hpp>
@@ -19,9 +20,22 @@
 void EmuWindow::init() {
     initConfig();
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(chip8DisplayWidth * config.chip8Scale,
-               chip8DisplayHeight * config.chip8Scale, this->Header);
-    SetWindowMinSize(64 * 8, 32 * 8);
+
+    int windowWidth;
+    int windowHeight;
+
+    if (config.rememberWindowSize && (config.windowWidth != 0) &&
+        (config.windowHeight != 0)) {
+        windowWidth = config.windowWidth;
+        windowHeight = config.windowHeight;
+    } else {
+        windowWidth = chip8DisplayWidth * config.chip8Scale;
+        windowHeight =
+            chip8DisplayHeight * config.chip8Scale + getMenubarHeight();
+    }
+
+    InitWindow(windowWidth, windowHeight, this->Header);
+    SetWindowMinSize(64 * 8, (32 + menuBarHeight) * 8);
     SetTargetFPS(this->config.targetFPS);
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(WHITE));
     SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
@@ -246,6 +260,8 @@ void EmuWindow::checkKeyboardShortcuts() {
     else
         inFF = false;
 
+    if (IsKeyDown(KEY_ESCAPE) && )
+    
     return;
 }
 
@@ -262,7 +278,7 @@ void EmuWindow::toggleBorderlessWindow() {
 }
 
 void EmuWindow::toggleFullscreen() {
-    toggleFullscreen();
+    ToggleFullscreen();
     fullscreenToggle = false;
 }
 
@@ -346,6 +362,18 @@ void EmuWindow::loadConfig(std::string configPath) {
 
                     std::cout << "Loaded config targetFPS: " << config.targetFPS
                               << std::endl;
+                } else if (var == "rememberWindowSize") {
+                    if (val == "1" || val == "true")
+                        config.rememberWindowSize = true;
+                    else
+                        config.rememberWindowSize = false;
+
+                    std::cout << "Loaded config rememberWindowSize: "
+                              << config.rememberWindowSize << std::endl;
+                } else if (var == "windowWidth") {
+                    config.windowWidth = std::stoi(val);
+                } else if (var == "windowHeight") {
+                    config.windowHeight = std::stoi(val);
                 } else if (var == "chip8Scale") {
                     config.chip8Scale = std::stoi(val);
 
@@ -382,6 +410,12 @@ void EmuWindow::saveConfig(std::string configPath) {
 
     file << "showFPS=" << config.showFPS << '\n';
     file << "targetFPS=" << config.targetFPS << '\n';
+    file << "rememberWindowSize=" << config.rememberWindowSize << '\n';
+
+    if (config.rememberWindowSize) {
+        file << "windowWidth=" << GetScreenWidth() << '\n';
+        file << "windowHeight=" << GetScreenHeight() << '\n';
+    }
 
     file << '\n';
 
@@ -418,11 +452,18 @@ void EmuWindow::drawMenuBar() {
         menuBar.fileActive = 0;
     }
 
-    if (GuiDropdownBox(
-            Rectangle{60, 0, 85, (float)getMenubarHeight()},
-            "Emulator;Show FPS;Pause;Increase speed;Decrease speed;Reset "
-            "Speed;Reset",
-            &menuBar.emulatorActive, menuBar.emulatorEditMode)) {
+    std::string emulatorFmtString =
+        "Emulator;{};{};Increase speed;Decrease speed;Reset "
+        "Speed;Reset";
+    const char *fpsText = getShowFPS() ? "Hide FPS" : "Show FPS";
+    const char *pauseText = getIsPaused() ? "Resume" : "Pause";
+
+    std::string emulatorDropdown = std::vformat(
+        emulatorFmtString, std::make_format_args(fpsText, pauseText));
+
+    if (GuiDropdownBox(Rectangle{60, 0, 85, (float)getMenubarHeight()},
+                       emulatorDropdown.c_str(), &menuBar.emulatorActive,
+                       menuBar.emulatorEditMode)) {
         menuBar.emulatorEditMode = !menuBar.emulatorEditMode;
 
         switch (menuBar.emulatorActive) {
@@ -465,10 +506,12 @@ void EmuWindow::drawMenuBar() {
         menuBar.emulatorActive = 0;
     }
 
-    if (GuiDropdownBox(Rectangle{60 + 85, 0, 85, (float)getMenubarHeight()},
-                       "View;Toggle Fullscreen;Toggle Borderless "
-                       "Window;Increase Scale;Decrease Scale",
-                       &menuBar.viewActive, menuBar.viewEditMode)) {
+    // TODO: expand dropdown when open
+    if (GuiDropdownBox(
+            Rectangle{60 + 85, 0, 85, (float)getMenubarHeight()},
+            "Window;Toggle Fullscreen;Toggle Borderless "
+            "Window;Restore Window Size;Increase Scale;Decrease Scale",
+            &menuBar.viewActive, menuBar.viewEditMode)) {
         menuBar.viewEditMode = !menuBar.viewEditMode;
 
         switch (menuBar.viewActive) {
@@ -477,20 +520,22 @@ void EmuWindow::drawMenuBar() {
 
                 break;
             }
-
             case 2: {
                 toggleBorderlessWindow();
                 break;
             }
-
             case 3: {
+                config.rememberWindowSize = !config.rememberWindowSize;
+                break;
+            }
+            case 4: {
                 int tempScale = getChip8Scale();
                 setChip8Scale(tempScale + 1);
 
                 setScaleUpdated(true);
                 break;
             }
-            case 4: {
+            case 5: {
                 int tempScale = getChip8Scale();
                 setChip8Scale(tempScale - 1);
 

@@ -98,6 +98,9 @@ class EmuWindow {
     struct {
         bool showFPS = false;
         int targetFPS = 60;
+        bool rememberWindowSize = false;
+        int windowWidth = 0;
+        int windowHeight = 0;
 
         int chip8Scale = 10;
         int chip8InstPerFrame = 11;
@@ -107,7 +110,9 @@ class EmuWindow {
     bool isPaused = false;
     bool inFF = false;
 
+    // TODO: add esc to exit fullscreen
     bool fullscreenToggle = false;
+    bool inFullscreen = false;
 
     const int chip8DisplayWidth = 64;
     const int chip8DisplayHeight = 32;
