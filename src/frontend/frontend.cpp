@@ -35,6 +35,7 @@ void EmuWindow::init() {
     }
 
     InitWindow(windowWidth, windowHeight, this->Header);
+    SetExitKey(0);
     SetWindowMinSize(64 * 8, (32 + menuBarHeight) * 8);
     SetTargetFPS(this->config.targetFPS);
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(WHITE));
@@ -260,9 +261,60 @@ void EmuWindow::checkKeyboardShortcuts() {
     else
         inFF = false;
 
-    if (IsKeyDown(KEY_ESCAPE) && )
-    
+    if (IsKeyDown(KEY_ESCAPE) && getInFullscreen()) {
+        toggleFullscreen();
+    }
+
     return;
+}
+
+void EmuWindow::drawSettingsWindow() {
+    const float screenWidth = GetScreenWidth();
+    const float screenHeight = GetScreenHeight();
+
+    const float settingsWidth = screenWidth * 2 / 3;
+    const float settingsHeight = screenHeight * 2 / 3;
+
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.5f));
+
+    const float settingsX = (screenWidth / 2 - (settingsWidth / 2));
+    const float settingsY = (screenHeight / 2) - (settingsHeight / 2);
+
+    if (GuiWindowBox(
+            Rectangle{settingsX, settingsY, settingsWidth, settingsHeight},
+            "Settings")) {
+        setSettingsOpened(false);
+        return;
+    }
+
+    const float windowPadding = 10;
+
+    const float fontSize = 30;
+    const float fontSpacing = 5;
+
+    Vector2 saveButtonSize =
+        MeasureTextEx(GetFontDefault(), "Save", fontSize, fontSpacing);
+    Vector2 cancelButtonSize =
+        MeasureTextEx(GetFontDefault(), "Cancel", fontSize, fontSpacing);
+
+    // use cancelButton height here for consistency
+    if (GuiButton(
+            Rectangle{
+                settingsX + settingsWidth - windowPadding - saveButtonSize.x,
+                settingsY + settingsHeight - windowPadding - saveButtonSize.y,
+                saveButtonSize.x, cancelButtonSize.y},
+            "Save")) {
+        setSettingsOpened(false);
+    }
+    if (GuiButton(
+            Rectangle{
+                settingsX + settingsWidth - windowPadding - saveButtonSize.x -
+                    windowPadding - cancelButtonSize.x,
+                settingsY + settingsHeight - windowPadding - cancelButtonSize.y,
+                cancelButtonSize.x, cancelButtonSize.y},
+            "Cancel")) {
+        setSettingsOpened(false);
+    }
 }
 
 void EmuWindow::toggleBorderlessWindow() {
@@ -278,6 +330,8 @@ void EmuWindow::toggleBorderlessWindow() {
 }
 
 void EmuWindow::toggleFullscreen() {
+    SetWindowSize(GetMonitorWidth(GetCurrentMonitor()),
+                  GetMonitorHeight(GetCurrentMonitor()));
     ToggleFullscreen();
     fullscreenToggle = false;
 }
@@ -454,7 +508,7 @@ void EmuWindow::drawMenuBar() {
 
     std::string emulatorFmtString =
         "Emulator;{};{};Increase speed;Decrease speed;Reset "
-        "Speed;Reset";
+        "Speed;Settings;Reset";
     const char *fpsText = getShowFPS() ? "Hide FPS" : "Show FPS";
     const char *pauseText = getIsPaused() ? "Resume" : "Pause";
 
@@ -499,6 +553,11 @@ void EmuWindow::drawMenuBar() {
             }
 
             case 6: {
+                setSettingsOpened(!getSettingsOpened());
+                break;
+            }
+
+            case 7: {
                 resetEmu();
                 break;
             }
@@ -517,6 +576,7 @@ void EmuWindow::drawMenuBar() {
         switch (menuBar.viewActive) {
             case 1: {
                 fullscreenToggle = true;
+                inFullscreen = !inFullscreen;
 
                 break;
             }

@@ -20,6 +20,8 @@ class EmuWindow {
     void updateDisplay(const uint8_t *pixels, int width, int height);
     void drawDisplay();
 
+    void drawSettingsWindow();
+
     void closeEmuWindow();
 
     int getWidth() { return windowWidth; }
@@ -51,8 +53,14 @@ class EmuWindow {
     void setIsPaused(bool val) { isPaused = val; }
     void toggleIsPaused() { isPaused = !isPaused; }
 
+    bool getInFullscreen() { return inFullscreen; }
+    void setInFullscreen(bool val) { inFullscreen = val; }
+
     bool getInFF() { return inFF; }
     void setInFF(bool val) { inFF = val; }
+
+    bool getSettingsOpened() { return settingsOpened; }
+    void setSettingsOpened(bool val) { settingsOpened = val; }
 
     int getChip8InstPerFrame() { return chip8InstPerFrame; }
     void setchip8InstPerFrame(int val) { chip8InstPerFrame = val; }
@@ -113,6 +121,7 @@ class EmuWindow {
     // TODO: add esc to exit fullscreen
     bool fullscreenToggle = false;
     bool inFullscreen = false;
+    bool settingsOpened = false;
 
     const int chip8DisplayWidth = 64;
     const int chip8DisplayHeight = 32;

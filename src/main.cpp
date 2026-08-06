@@ -70,6 +70,8 @@ int main(int argc, char** argv) {
         }
         emuWindow.drawMenuBar();
 
+        if (emuWindow.getSettingsOpened()) emuWindow.drawSettingsWindow();
+
         EndDrawing();
 
         if (emuWindow.getScaleUpdated()) emuWindow.updateChip8Scale();
