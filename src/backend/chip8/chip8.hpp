@@ -23,6 +23,9 @@ struct Opcode {
           NNN(inputCode & 0x0FFF) {}
 };
 
+const char chip8Buttons[] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                             '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
 enum class Chip8Key {
     Zero = 0x0,
     One = 0x1,
@@ -30,7 +33,7 @@ enum class Chip8Key {
     Three = 0x3,
     Four = 0x4,
     Five = 0x5,
-    Six = 0x6,  // 67
+    Six = 0x6,
     Seven = 0x7,
     Eight = 0x8,
     Nine = 0x9,

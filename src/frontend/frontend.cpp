@@ -70,7 +70,7 @@ void EmuWindow::drawDisplay() {
         static_cast<float>(GetScreenHeight() - getMenubarHeight());
 
     DrawRectangle(0, getMenubarHeight(), availableWidth, availableHeight,
-                  DARKGRAY);
+                  GetColor(0x181818FF));
 
     float gameWidth = static_cast<float>(displayTexture.width);
     float gameHeight = static_cast<float>(displayTexture.height);
@@ -261,6 +261,13 @@ void EmuWindow::checkKeyboardShortcuts() {
     else
         inFF = false;
 
+    // Toggle settings: Ctrl + ','
+    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
+        IsKeyPressed(KEY_COMMA)) {
+        std::cout << "Window: Ctrl + , Pressed" << std::endl;
+        setSettingsOpened(!getSettingsOpened());
+    }
+
     if (IsKeyDown(KEY_ESCAPE) && getInFullscreen()) {
         toggleFullscreen();
     }
@@ -272,8 +279,8 @@ void EmuWindow::drawSettingsWindow() {
     const float screenWidth = GetScreenWidth();
     const float screenHeight = GetScreenHeight();
 
-    const float settingsWidth = screenWidth * 2 / 3;
-    const float settingsHeight = screenHeight * 2 / 3;
+    const float settingsWidth = screenWidth / 3;
+    const float settingsHeight = screenHeight * 0.9f;
 
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.5f));
 
@@ -288,6 +295,46 @@ void EmuWindow::drawSettingsWindow() {
     }
 
     const float windowPadding = 10;
+
+    Rectangle scrollPanelBounds = {
+        settingsX + windowPadding,
+        settingsY + 35.0f,
+        settingsWidth - (windowPadding * 2),
+        settingsHeight - 95.0f,
+    };
+
+    const int itemCount = 16;
+    const float rowHeight = 40.0f;
+    const float topPadding = 10.0f;
+    const float bottomPadding = 20.0f;
+
+    const float totalHeight =
+        topPadding + (rowHeight * itemCount) + bottomPadding;
+
+    Rectangle scrollPanelContent = {0, 0, scrollPanelBounds.width - 20.0f,
+                                    totalHeight};
+
+    GuiScrollPanel(scrollPanelBounds, nullptr, scrollPanelContent,
+                   &settingsScrollPos, &settingsScrollView);
+
+    const float itemStartX = scrollPanelBounds.x + 10.0f;
+    const float itemStartY = scrollPanelBounds.y + 10.0f;
+
+    BeginScissorMode(settingsScrollView.x, settingsScrollView.y,
+                     settingsScrollView.width, settingsScrollView.height);
+
+    for (int i = 0; i < 16; i++) {
+        float currentY = itemStartY + (i * 40) + settingsScrollPos.y;
+
+        GuiLabel(Rectangle{itemStartX, currentY, 100.0f, 30.0f},
+                 TextFormat("Key %c", chip8Buttons[i]));
+        if (GuiButton(Rectangle{itemStartX + 120.0f, currentY, 150.0f, 30.0f},
+                      "Bind Key")) {
+            std::cout << "button pressed:" << chip8Buttons[i] << std::endl;
+        }
+    }
+
+    EndScissorMode();
 
     const float fontSize = 30;
     const float fontSpacing = 5;
@@ -486,9 +533,12 @@ void EmuWindow::drawMenuBar() {
         Rectangle{0, 0, (float)GetScreenWidth(), (float)getMenubarHeight()},
         nullptr);
 
-    if (GuiDropdownBox(Rectangle{0, 0, 60, (float)getMenubarHeight()},
-                       "File;Open;Exit", &menuBar.fileActive,
-                       menuBar.fileEditMode)) {
+    // TODO: fix
+    float fileDropdownWidth = menuBar.fileEditMode ? 250.0f : 60.0f;
+
+    if (GuiDropdownBox(
+            Rectangle{0, 0, fileDropdownWidth, (float)getMenubarHeight()},
+            "File;Open;Exit", &menuBar.fileActive, menuBar.fileEditMode)) {
         menuBar.fileEditMode = !menuBar.fileEditMode;
 
         switch (menuBar.fileActive) {
@@ -515,9 +565,12 @@ void EmuWindow::drawMenuBar() {
     std::string emulatorDropdown = std::vformat(
         emulatorFmtString, std::make_format_args(fpsText, pauseText));
 
-    if (GuiDropdownBox(Rectangle{60, 0, 85, (float)getMenubarHeight()},
-                       emulatorDropdown.c_str(), &menuBar.emulatorActive,
-                       menuBar.emulatorEditMode)) {
+    float emulatorDropdownWidth = menuBar.fileEditMode ? 250.0f : 85.0f;
+
+    if (GuiDropdownBox(
+            Rectangle{60, 0, emulatorDropdownWidth, (float)getMenubarHeight()},
+            emulatorDropdown.c_str(), &menuBar.emulatorActive,
+            menuBar.emulatorEditMode)) {
         menuBar.emulatorEditMode = !menuBar.emulatorEditMode;
 
         switch (menuBar.emulatorActive) {
@@ -565,9 +618,11 @@ void EmuWindow::drawMenuBar() {
         menuBar.emulatorActive = 0;
     }
 
-    // TODO: expand dropdown when open
+    float windowDropdownWidth = menuBar.fileEditMode ? 250.0f : 85.0f;
+
     if (GuiDropdownBox(
-            Rectangle{60 + 85, 0, 85, (float)getMenubarHeight()},
+            Rectangle{60 + 85, 0, windowDropdownWidth,
+                      (float)getMenubarHeight()},
             "Window;Toggle Fullscreen;Toggle Borderless "
             "Window;Restore Window Size;Increase Scale;Decrease Scale",
             &menuBar.viewActive, menuBar.viewEditMode)) {

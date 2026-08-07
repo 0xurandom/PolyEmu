@@ -123,6 +123,9 @@ class EmuWindow {
     bool inFullscreen = false;
     bool settingsOpened = false;
 
+    Vector2 settingsScrollPos = {0, 0};
+    Rectangle settingsScrollView = {0};
+
     const int chip8DisplayWidth = 64;
     const int chip8DisplayHeight = 32;
 

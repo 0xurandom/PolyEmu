@@ -9,6 +9,7 @@
 #include "raygui.h"
 
 // TODO: init chip8 from window
+// using unique ptr
 
 int main(int argc, char** argv) {
     Chip8 chip8;
@@ -46,15 +47,9 @@ int main(int argc, char** argv) {
             if (emuWindow.getInFF()) emuWindow.displayFFIndicator();
 
         } else {
-            ClearBackground(WHITE);
+            ClearBackground(LIGHTGRAY);
 
             emuWindow.drawGreeting();
-
-            GuiGrid(
-                Rectangle{0, (float)GetScreenHeight(), (float)GetScreenWidth(),
-                          (float)GetScreenHeight() -
-                              (float)emuWindow.getMenubarHeight()},
-                "grid", (float)20, 1, &mouseCell);
         }
 
         if (IsFileDropped()) {
