@@ -248,6 +248,7 @@ void EmuWindow::checkKeyboardShortcuts() {
         resetEmu();
     }
 
+    // Pause: Ctrl + P
     if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
         IsKeyPressed(KEY_P)) {
         std::cout << "Window: Ctrl + P pressed" << std::endl;
@@ -268,7 +269,18 @@ void EmuWindow::checkKeyboardShortcuts() {
         setSettingsOpened(!getSettingsOpened());
     }
 
-    if (IsKeyDown(KEY_ESCAPE) && getInFullscreen()) {
+    // Esc to exit fullscreen
+    if (IsKeyPressed(KEY_ESCAPE) && getInFullscreen()) {
+        inFullscreen = false;
+        toggleFullscreen();
+    }
+
+    // Toggle fullscreen: Ctrl + F
+    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
+        IsKeyPressed(KEY_F)) {
+        std::cout << "Window: Ctrl + F pressed" << std::endl;
+
+        inFullscreen = !inFullscreen;
         toggleFullscreen();
     }
 
@@ -377,9 +389,21 @@ void EmuWindow::toggleBorderlessWindow() {
 }
 
 void EmuWindow::toggleFullscreen() {
-    SetWindowSize(GetMonitorWidth(GetCurrentMonitor()),
-                  GetMonitorHeight(GetCurrentMonitor()));
-    ToggleFullscreen();
+    if (inFullscreen) {
+        prevWindowState.width = GetScreenWidth();
+        prevWindowState.height = GetScreenHeight();
+        prevWindowState.position = GetWindowPosition();
+
+        int monitor = GetCurrentMonitor();
+        SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
+        ToggleFullscreen();
+    } else {
+        ToggleFullscreen();
+        SetWindowSize(prevWindowState.width, prevWindowState.height);
+        SetWindowPosition(prevWindowState.position.x,
+                          prevWindowState.position.y);
+    }
+
     fullscreenToggle = false;
 }
 
@@ -533,11 +557,16 @@ void EmuWindow::drawMenuBar() {
         Rectangle{0, 0, (float)GetScreenWidth(), (float)getMenubarHeight()},
         nullptr);
 
-    // TODO: fix
-    float fileDropdownWidth = menuBar.fileEditMode ? 250.0f : 60.0f;
+    const float fileWidth = 70.0f;
+    const float emulatorWidth = 150.0f;
+    const float windowWidth = 220.0f;
+
+    const float fileX = 0.0f;
+    const float emulatorX = fileX + fileWidth;
+    const float windowX = emulatorX + emulatorWidth;
 
     if (GuiDropdownBox(
-            Rectangle{0, 0, fileDropdownWidth, (float)getMenubarHeight()},
+            Rectangle{fileX, 0, fileWidth, (float)getMenubarHeight()},
             "File;Open;Exit", &menuBar.fileActive, menuBar.fileEditMode)) {
         menuBar.fileEditMode = !menuBar.fileEditMode;
 
@@ -565,10 +594,10 @@ void EmuWindow::drawMenuBar() {
     std::string emulatorDropdown = std::vformat(
         emulatorFmtString, std::make_format_args(fpsText, pauseText));
 
-    float emulatorDropdownWidth = menuBar.fileEditMode ? 250.0f : 85.0f;
+    float emulatorDropdownWidth = menuBar.emulatorEditMode ? 250.0f : 85.0f;
 
     if (GuiDropdownBox(
-            Rectangle{60, 0, emulatorDropdownWidth, (float)getMenubarHeight()},
+            Rectangle{emulatorX, 0, emulatorWidth, (float)getMenubarHeight()},
             emulatorDropdown.c_str(), &menuBar.emulatorActive,
             menuBar.emulatorEditMode)) {
         menuBar.emulatorEditMode = !menuBar.emulatorEditMode;
@@ -582,34 +611,28 @@ void EmuWindow::drawMenuBar() {
 
                 break;
             }
-
             case 2: {
                 toggleIsPaused();
                 break;
             }
-
             case 3: {
                 int speed = getChip8InstPerFrame();
                 setchip8InstPerFrame(speed + 8);
                 break;
             }
-
             case 4: {
                 int speed = getChip8InstPerFrame();
                 setchip8InstPerFrame(speed - 8);
                 break;
             }
-
             case 5: {
                 resetchip8InstPerFrame();
                 break;
             }
-
             case 6: {
                 setSettingsOpened(!getSettingsOpened());
                 break;
             }
-
             case 7: {
                 resetEmu();
                 break;
@@ -621,8 +644,7 @@ void EmuWindow::drawMenuBar() {
     float windowDropdownWidth = menuBar.fileEditMode ? 250.0f : 85.0f;
 
     if (GuiDropdownBox(
-            Rectangle{60 + 85, 0, windowDropdownWidth,
-                      (float)getMenubarHeight()},
+            Rectangle{windowX, 0, windowWidth, (float)getMenubarHeight()},
             "Window;Toggle Fullscreen;Toggle Borderless "
             "Window;Restore Window Size;Increase Scale;Decrease Scale",
             &menuBar.viewActive, menuBar.viewEditMode)) {

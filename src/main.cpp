@@ -12,14 +12,11 @@
 // using unique ptr
 
 int main(int argc, char** argv) {
-    Chip8 chip8;
-
     Vector2 mouseCell = {0.0f, 0.0f};
 
     EmuWindow emuWindow;
     emuWindow.init();
     emuWindow.initDisplay(Chip8::displayWidth, Chip8::displayHeight);
-    emuWindow.setChip8Ptr(&chip8);
 
     if (argc > 1) {
         if (argc != 2)

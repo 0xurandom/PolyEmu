@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <vector>
 
 #include "../backend/chip8/chip8.hpp"
@@ -88,8 +89,7 @@ class EmuWindow {
 
     void checkKeyboardShortcuts();
 
-    Chip8 *getChip8Ptr() { return chip8; }
-    void setChip8Ptr(Chip8 *chip8) { this->chip8 = chip8; }
+    Chip8 *getChip8Ptr() { return chip8.get(); }
     std::string gettChip8RomPath() { return chip8RomPath; }
 
    private:
@@ -114,6 +114,12 @@ class EmuWindow {
         int chip8InstPerFrame = 11;
     } config;
 
+    struct {
+        int width = 0;
+        int height = 0;
+        Vector2 position = {0.0f, 0.0f};
+    } prevWindowState;
+
     bool romIsLoaded = false;
     bool isPaused = false;
     bool inFF = false;
@@ -129,7 +135,7 @@ class EmuWindow {
     const int chip8DisplayWidth = 64;
     const int chip8DisplayHeight = 32;
 
-    const int chip8FFincrement = 8;
+    const int chip8FFincrement = 15;
 
     int windowWidth = chip8DisplayWidth * config.chip8Scale;
     int windowHeight = chip8DisplayHeight * config.chip8Scale;
@@ -152,5 +158,5 @@ class EmuWindow {
     int chip8InstPerFrame = 11;
     int defaultInstPerFrame = 11;
 
-    Chip8 *chip8 = NULL;
+    std::unique_ptr<Chip8> chip8 = std::make_unique<Chip8>();
 };
