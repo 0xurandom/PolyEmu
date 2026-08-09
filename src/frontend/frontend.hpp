@@ -89,7 +89,7 @@ class EmuWindow {
 
     void checkKeyboardShortcuts();
 
-    Chip8 *getChip8Ptr() { return chip8.get(); }
+    Chip8 &getChip8Ptr() { return *chip8; }
     std::string gettChip8RomPath() { return chip8RomPath; }
 
    private:

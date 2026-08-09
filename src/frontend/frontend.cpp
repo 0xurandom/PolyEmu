@@ -99,7 +99,7 @@ void EmuWindow::drawDisplay() {
 
 void EmuWindow::updateChip8KeysPressed() {
     for (int i = 0; i < 16; i++) {
-        getChip8Ptr()->setKeyState(i, IsKeyDown(Chip8keymap[i]));
+        getChip8Ptr().setKeyState(i, IsKeyDown(Chip8keymap[i]));
     }
 }
 
@@ -114,23 +114,30 @@ std::string EmuWindow::getRomName(const std::string filePath) {
 void EmuWindow::handleROM(const std::string filePath) {
     const char *extension = GetFileExtension(filePath.c_str());
 
-    if (extension != nullptr && strcmp(extension, ".ch8") == 0) {
+    if (extension == nullptr) {
+        std::cout << "Error: Unknown file" << std::endl;
+        return;
+    }
+
+    if (strcmp(extension, ".ch8") == 0) {
         if (getRomIsLoaded()) {
-            getChip8Ptr()->reset();
+            getChip8Ptr().reset();
         }
 
-        if (getChip8Ptr()->loadROM(filePath)) {
-            std::cout << "Chip8: Successfully loaded chip8 rom: " << filePath
-                      << std::endl;
-            chip8RomPath = filePath;
-            setRomIsLoaded(true);
-            SetWindowTitle(getRomName(filePath).c_str());
-        } else {
+        if (!getChip8Ptr().loadROM(filePath)) {
             std::cerr << "Error: Couldn't load chip8 rom" << std::endl;
+            return;
         }
-    } else {
-        std::cout << "Error: Unknown file" << std::endl;
+
+        std::cout << "Chip8: Successfully loaded chip8 rom: " << filePath
+                  << std::endl;
+        chip8RomPath = filePath;
+    } else if (strcmp(extension, ".wasm")) {
+        //
     }
+
+    setRomIsLoaded(true);
+    SetWindowTitle(getRomName(filePath).c_str());
 }
 
 void EmuWindow::runEmuFrame() {
@@ -312,7 +319,7 @@ void EmuWindow::drawSettingsWindow() {
         settingsX + windowPadding,
         settingsY + 35.0f,
         settingsWidth - (windowPadding * 2),
-        settingsHeight - 95.0f,
+        settingsHeight - 45.0f,
     };
 
     const int itemCount = 16;
@@ -347,33 +354,6 @@ void EmuWindow::drawSettingsWindow() {
     }
 
     EndScissorMode();
-
-    const float fontSize = 30;
-    const float fontSpacing = 5;
-
-    Vector2 saveButtonSize =
-        MeasureTextEx(GetFontDefault(), "Save", fontSize, fontSpacing);
-    Vector2 cancelButtonSize =
-        MeasureTextEx(GetFontDefault(), "Cancel", fontSize, fontSpacing);
-
-    // use cancelButton height here for consistency
-    if (GuiButton(
-            Rectangle{
-                settingsX + settingsWidth - windowPadding - saveButtonSize.x,
-                settingsY + settingsHeight - windowPadding - saveButtonSize.y,
-                saveButtonSize.x, cancelButtonSize.y},
-            "Save")) {
-        setSettingsOpened(false);
-    }
-    if (GuiButton(
-            Rectangle{
-                settingsX + settingsWidth - windowPadding - saveButtonSize.x -
-                    windowPadding - cancelButtonSize.x,
-                settingsY + settingsHeight - windowPadding - cancelButtonSize.y,
-                cancelButtonSize.x, cancelButtonSize.y},
-            "Cancel")) {
-        setSettingsOpened(false);
-    }
 }
 
 void EmuWindow::toggleBorderlessWindow() {
@@ -558,8 +538,8 @@ void EmuWindow::drawMenuBar() {
         nullptr);
 
     const float fileWidth = 70.0f;
-    const float emulatorWidth = 150.0f;
-    const float windowWidth = 220.0f;
+    const float emulatorWidth = 125.0f;
+    const float windowWidth = 175.0f;
 
     const float fileX = 0.0f;
     const float emulatorX = fileX + fileWidth;
@@ -686,8 +666,8 @@ void EmuWindow::drawMenuBar() {
 }
 
 void EmuWindow::resetEmu() {
-    getChip8Ptr()->reset();
-    getChip8Ptr()->loadROM(gettChip8RomPath());
+    getChip8Ptr().reset();
+    getChip8Ptr().loadROM(gettChip8RomPath());
 }
 
 void EmuWindow::closeEmuWindow() {
