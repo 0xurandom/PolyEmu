@@ -1,4 +1,5 @@
 ---
 BasedOnStyle: Google
+AllowShortCaseLabelsOnASingleLine: true
 IndentWidth: 4
 ---

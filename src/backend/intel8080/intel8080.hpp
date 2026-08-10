@@ -43,4 +43,6 @@ class i8080 : public EmuBackend {
 
     void emulate8080();
     void unimplementedInstruction();
+    void handleAdditionFlags(uint8_t ans);
+    uint8_t handleParityFlag(uint8_t ans);
 };
