@@ -69,11 +69,12 @@ void i8080::emulate8080() {
 
         // DAD B
         case 0x09: {
-            uint32_t ans = static_cast<uint32_t>(*state.getHLPtr()) +
-                           static_cast<uint32_t>(*state.getBCPtr());
+            uint32_t ans = static_cast<uint32_t>(state.getHL()) +
+                           static_cast<uint32_t>(state.getBC());
 
             state.cc.cy = (ans > 0xffff) ? 1 : 0;
             state.setHL(ans & 0xffff);
+            pc += 1;
             break;
         }
 
@@ -101,9 +102,42 @@ void i8080::emulate8080() {
             break;
         }
 
-        //
+        // LXI D, D16
+        case 0x11: {
+            state.e = state.memory[pc + 1];
+            state.d = state.memory[pc + 2];
+            pc += 3;
+            break;
+        }
 
-        // RAR
+        // INX D
+        case 0x13: {
+            uint16_t de = state.getDE();
+            de += 1;
+            state.setDE(de);
+            pc += 1;
+            break;
+        }
+
+        // DAD D
+        case 0x19: {
+            uint32_t ans = static_cast<uint32_t>(state.getHL()) +
+                           static_cast<uint32_t>(state.getDE());
+
+            state.cc.cy = (ans > 0xffff) ? 1 : 0;
+            state.setHL(ans & 0xffff);
+            pc += 1;
+            break;
+        }
+
+        // LDAX D
+        case 0x1a: {
+            state.a = *state.getDEPtr();
+            pc += 1;
+            break;
+        }
+
+            // RAR
         case 0x1f: {
             uint8_t x = state.a;
             state.a = (state.cc.cy << 7) | (x >> 1);
@@ -112,7 +146,93 @@ void i8080::emulate8080() {
             break;
         }
 
-        case 0x2f: state.a = ~state.a; break;  // CMA
+        // LXI H, D16
+        case 0x21: {
+            state.l = state.memory[pc + 1];
+            state.h = state.memory[pc + 2];
+
+            pc += 2;
+            break;
+        }
+
+        // INX H
+        case 0x23: {
+            uint16_t hl = state.getHL();
+            hl += 1;
+            state.setHL(hl);
+            pc += 1;
+            break;
+        }
+
+        // MVI H, D8
+        case 0x26: {
+            uint8_t ans = state.memory[pc + 1];
+            state.h = ans;
+            pc += 2;
+            break;
+        }
+
+        // DAD H
+        case 0x29: {
+            uint32_t ans = static_cast<uint32_t>(state.getHL()) +
+                           static_cast<uint32_t>(state.getHL());
+
+            state.cc.cy = (ans > 0xffff) ? 1 : 0;
+            state.setHL(ans & 0xffff);
+            pc += 1;
+            break;
+        }
+
+        case 0x2f:
+            state.a = ~state.a;
+            break;  // CMA
+
+        // LXI SP, D16
+        case 0x31: {
+            state.sp = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+
+            pc += 3;
+            break;
+        }
+
+        // STA adr
+        case 0x32: {
+            uint16_t adr = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            state.memory[adr] = state.a;
+
+            pc += 3;
+            break;
+        }
+
+        // INX SP
+        case 0x33: {
+            state.sp++;
+            pc += 1;
+            break;
+        }
+
+        // MVI M, D8
+        case 0x36: {
+            uint8_t ans = state.memory[pc + 1];
+            state.setHL(ans);
+            pc += 2;
+        }
+
+        // LDA adr
+        case 0x3a: {
+            uint16_t adr = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            state.a = state.memory[adr];
+            pc += 3;
+            break;
+        }
+
+        // MVI A, D8
+        case 0x3e: {
+            uint8_t ans = state.memory[pc + 1];
+            state.a = ans;
+            pc += 2;
+            break;
+        }
 
         case 0x40: state.b = state.b; break;            // MOV B, B
         case 0x41: state.b = state.c; break;            // MOV B, C

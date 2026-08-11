@@ -30,22 +30,27 @@ struct State8080 {
     uint8_t int_enable;
 
     uint16_t getHL() { return (h << 8) | l; }
+    uint16_t getBC() { return (b << 8) | c; }
+    uint16_t getDE() { return (d << 8) | e; }
 
     void setHL(uint16_t val) {
         h = (val >> 8) & 0xff;
         l = val & 0xff;
     }
 
-    uint8_t* getHLPtr() { return &memory[getHL()]; }
-
-    uint16_t getBC() { return (b << 8) | c; }
-
     void setBC(uint16_t val) {
         b = (val >> 8) & 0xff;
         c = val & 0xff;
     }
 
+    void setDE(uint16_t val) {
+        d = (val >> 8) & 0xff;
+        e = val & 0xff;
+    }
+
+    uint8_t* getHLPtr() { return &memory[getHL()]; }
     uint8_t* getBCPtr() { return &memory[getBC()]; }
+    uint8_t* getDEPtr() { return &memory[getDE()]; }
 };
 
 class i8080 : public EmuBackend {
