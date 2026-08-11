@@ -108,68 +108,32 @@ void i8080::emulate8080() {
         case 0x7e: state.a = *state.getHLPtr(); break;  // MOV A, M
         case 0x7f: state.a = state.a; break;            // MOV A, A
 
-        case 0x80:
-            iadd(state.a, state.b);
-            break;  // ADD B
+        case 0x80: iadd(state.b); break;            // ADD B
+        case 0x81: iadd(state.c); break;            // ADD C
+        case 0x82: iadd(state.d); break;            // ADD D
+        case 0x83: iadd(state.e); break;            // ADD E
+        case 0x84: iadd(state.h); break;            // ADD H
+        case 0x85: iadd(state.l); break;            // ADD L
+        case 0x86: iadd(*state.getHLPtr()); break;  // ADD M
+        case 0x87: iadd(state.a); break;            // ADD A
 
-        // ADD C
-        case 0x81: {
-            uint16_t ans =
-                static_cast<uint16_t>(state.a) + static_cast<uint16_t>(state.c);
-            handleAdditionFlags(ans);
-            break;
-        }
-        // ADD D
-        case 0x82: {
-            uint16_t ans =
-                static_cast<uint16_t>(state.a) + static_cast<uint16_t>(state.d);
-            handleAdditionFlags(ans);
-            break;
-        }
+        case 0x88: iadc(state.b); break;            // ADC B
+        case 0x89: iadc(state.c); break;            // ADC C
+        case 0x8a: iadc(state.d); break;            // ADC D
+        case 0x8b: iadc(state.e); break;            // ADC E
+        case 0x8c: iadc(state.h); break;            // ADC H
+        case 0x8d: iadc(state.l); break;            // ADC L
+        case 0x8e: iadc(*state.getHLPtr()); break;  // ADC M
+        case 0x8f: iadc(state.a); break;            // ADC A
 
-        // ADD E
-        case 0x83: {
-            uint16_t ans =
-                static_cast<uint16_t>(state.a) + static_cast<uint16_t>(state.e);
-            handleAdditionFlags(ans);
-            break;
-        }
-
-        // ADD H
-        case 0x84: {
-            uint16_t ans =
-                static_cast<uint16_t>(state.a) + static_cast<uint16_t>(state.h);
-            handleAdditionFlags(ans);
-            break;
-        }
-
-        // ADD L
-        case 0x85: {
-            uint16_t ans =
-                static_cast<uint16_t>(state.a) + static_cast<uint16_t>(state.l);
-            handleAdditionFlags(ans);
-            break;
-        }
-
-        // ADD M
-        case 0x86: {
-            uint16_t ans = static_cast<uint16_t>(state.a) +
-                           static_cast<uint16_t>(*state.getHLPtr());
-            handleAdditionFlags(ans);
-            break;
-        }
-
-        // ADD A
-        case 0x87: {
-            uint16_t ans =
-                static_cast<uint16_t>(state.a) + static_cast<uint16_t>(state.a);
-            handleAdditionFlags(ans);
-            break;
-        }
-
-        // ADC B
-        case 0x88: {
-        }
+        case 0x90: isub(state.b); break;            // SUB B
+        case 0x91: isub(state.c); break;            // SUB C
+        case 0x92: isub(state.d); break;            // SUB D
+        case 0x93: isub(state.e); break;            // SUB E
+        case 0x94: isub(state.h); break;            // SUB H
+        case 0x95: isub(state.l); break;            // SUB L
+        case 0x96: isub(*state.getHLPtr()); break;  // SUB M
+        case 0x97: isub(state.a); break;            // SUB A
     }
 
     state.pc++;
@@ -182,17 +146,41 @@ void i8080::unimplementedInstruction() {
     exit(1);
 }
 
-void i8080::iadd(uint8_t x, uint8_t y) {
-    uint16_t ans = static_cast<uint16_t>(x) + static_cast<uint16_t>(y);
-    handleAdditionFlags(ans);
+void i8080::iadd(uint8_t x) {
+    uint16_t ans = static_cast<uint16_t>(state.a) + static_cast<uint16_t>(x);
+
+    state.cc.cy = (ans > 0xff) ? 1 : 0;
+    state.a = ans & 0xff;
+
+    handleArithmeticFlags(ans);
 }
 
-void i8080::handleAdditionFlags(uint16_t ans) {
-    state.cc.z = ((ans & 0xff) == 0) ? 1 : 0;
-    state.cc.s = (ans & 0x80) ? 1 : 0;
+void i8080::iadc(uint8_t x) {
+    uint16_t ans = static_cast<uint16_t>(state.a) + static_cast<uint16_t>(x) +
+                   static_cast<uint16_t>(state.cc.cy);
+
     state.cc.cy = (ans > 0xff) ? 1 : 0;
-    state.cc.p = handleParityFlag(ans & 0xff);
+    uint8_t carry = (state.a & 0x0f) + (x & 0x0f) + (state.cc.cy);
+    state.cc.ac = (carry > 0x0f) ? 1 : 0;
     state.a = ans & 0xff;
+
+    handleArithmeticFlags(ans);
+}
+
+void i8080::isub(uint8_t x) {
+    uint16_t ans = static_cast<uint16_t>(state.a) - static_cast<uint16_t>(x);
+
+    state.cc.cy = (state.a < x) ? 1 : 0;
+    state.cc.ac = (~(state.a ^ (ans & 0xff) ^ x) & 0x10) ? 1 : 0;
+    state.a = ans & 0xff;
+
+    handleArithmeticFlags(ans);
+}
+
+void i8080::handleArithmeticFlags(uint16_t ans) {
+    state.cc.z = ((ans & 0xff) == 0) ? 1 : 0;
+    state.cc.s = ((ans & 0x80) ? 1 : 0);
+    state.cc.p = handleParityFlag(ans & 0xff);
 }
 
 uint8_t i8080::handleParityFlag(uint8_t ans) {
