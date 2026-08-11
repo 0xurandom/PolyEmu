@@ -43,6 +43,75 @@ void i8080::emulate8080() {
             break;
         }
 
+        // INT B
+        case 0x04: {
+            uint8_t ans = state.b + 1;
+            handleArithmeticFlags(ans);
+            state.cc.ac = ((ans & 0x0f) == 0x0f) ? 1 : 0;
+            break;
+        }
+
+        // DCR B
+        case 0x05: {
+            uint8_t ans = state.b - 1;
+            state.cc.ac = ((ans & 0x0f) != 0) ? 1 : 0;
+            handleArithmeticFlags(ans);
+            break;
+        }
+
+        // MVI B, D8
+        case 0x06: {
+            uint8_t ans = state.memory[pc + 1];
+            state.b = ans;
+            pc += 2;
+            break;
+        }
+
+        // DAD B
+        case 0x09: {
+            uint32_t ans = static_cast<uint32_t>(*state.getHLPtr()) +
+                           static_cast<uint32_t>(*state.getBCPtr());
+
+            state.cc.cy = (ans > 0xffff) ? 1 : 0;
+            state.setHL(ans & 0xffff);
+            break;
+        }
+
+        // DCR C
+        case 0x0d: {
+            uint8_t ans = state.c - 1;
+            state.cc.ac = ((ans & 0x0f) != 0) ? 1 : 0;
+            handleArithmeticFlags(ans);
+            break;
+        }
+
+        // MVI C, D8
+        case 0x0e: {
+            uint8_t ans = state.memory[pc + 1];
+            state.c = ans;
+            pc += 2;
+            break;
+        }
+
+        // RRC
+        case 0x0f: {
+            uint8_t x = state.a;
+            state.a = ((x & 1) << 7) | (x >> 1);
+            state.cc.cy = ((x & 1) == 1);
+            break;
+        }
+
+        //
+
+        // RAR
+        case 0x1f: {
+            uint8_t x = state.a;
+            state.a = (state.cc.cy << 7) | (x >> 1);
+            state.cc.cy = ((x & 1) == 1);
+
+            break;
+        }
+
         case 0x2f: state.a = ~state.a; break;  // CMA
 
         case 0x40: state.b = state.b; break;            // MOV B, B
@@ -172,6 +241,87 @@ void i8080::emulate8080() {
         case 0xb5: iora(state.l); break;            // ORA L
         case 0xb6: iora(*state.getHLPtr()); break;  // ORA M
         case 0xb7: iora(state.a); break;            // ORA A
+
+        case 0xb8: icmp(state.b); break;            // CMP B
+        case 0xb9: icmp(state.c); break;            // CMP C
+        case 0xba: icmp(state.d); break;            // CMP D
+        case 0xbb: icmp(state.e); break;            // CMP E
+        case 0xbc: icmp(state.h); break;            // CMP H
+        case 0xbd: icmp(state.l); break;            // CMP L
+        case 0xbe: icmp(*state.getHLPtr()); break;  // CMP M
+        case 0xbf:
+            icmp(state.a);
+            break;  // CMP A
+
+        // POP B
+        case 0xc1: {
+            state.c = state.memory[state.sp];
+            state.b = state.memory[state.sp + 1];
+            state.sp += 2;
+            break;
+        }
+
+        // PUSH B
+        case 0xc5: {
+            state.memory[state.sp - 1] = state.b;
+            state.memory[state.sp - 2] = state.c;
+            state.sp -= 2;
+            break;
+        }
+
+        // ANI
+        case 0xe6: {
+            uint8_t ans = state.a & opcode[1];
+
+            state.cc.cy = 0;
+            state.a = ans;
+            handleArithmeticFlags(ans);
+            state.pc++;
+
+            break;
+        }
+
+        // POP PSW
+        case 0xf1: {
+            state.a = state.memory[state.sp + 1];
+            uint8_t psw = state.memory[state.sp];
+
+            state.cc.z = ((psw & 0x01) == 0x01);
+            state.cc.s = ((psw & 0x02) == 0x02);
+            state.cc.p = ((psw & 0x04) == 0x04);
+            state.cc.cy = ((psw & 0x08) == 0x05);
+            state.cc.ac = ((psw & 0x10) == 0x10);
+
+            state.sp += 2;
+            break;
+        }
+
+        // PUSH PSW
+        case 0xf5: {
+            state.memory[state.sp - 1] = state.a;
+            uint8_t psw = (state.cc.z | state.cc.s << 1 | state.cc.p << 2 |
+                           state.cc.cy << 3 | state.cc.ac << 4);
+            state.memory[state.sp - 1] = psw;
+            state.sp -= 2;
+
+            break;
+        }
+
+        // CPI
+        case 0xfe: {
+            uint8_t x = state.a - opcode[1];
+
+            state.cc.cy = (state.a < opcode[1]) ? 1 : 0;
+            state.pc++;
+            handleArithmeticFlags(x);
+
+            break;
+        }
+
+        // RST 7
+        case 0xff: {
+            break;
+        }
     }
 
     state.pc++;
@@ -251,6 +401,15 @@ void i8080::iora(uint8_t x) {
 
     state.cc.cy = 0;
     state.cc.ac = 0;
+
+    handleArithmeticFlags(ans);
+}
+
+void i8080::icmp(uint8_t x) {
+    uint16_t ans = static_cast<uint16_t>(state.a) - static_cast<uint16_t>(x);
+
+    state.cc.cy = (state.a < x) ? 1 : 0;
+    state.cc.cy = (~(state.a ^ (ans & 0xff) ^ x) & 0x10) ? 1 : 0;
 
     handleArithmeticFlags(ans);
 }

@@ -37,6 +37,15 @@ struct State8080 {
     }
 
     uint8_t* getHLPtr() { return &memory[getHL()]; }
+
+    uint16_t getBC() { return (b << 8) | c; }
+
+    void setBC(uint16_t val) {
+        b = (val >> 8) & 0xff;
+        c = val & 0xff;
+    }
+
+    uint8_t* getBCPtr() { return &memory[getBC()]; }
 };
 
 class i8080 : public EmuBackend {
@@ -62,6 +71,7 @@ class i8080 : public EmuBackend {
     void iana(uint8_t x);
     void ixra(uint8_t x);
     void iora(uint8_t x);
+    void icmp(uint8_t x);
 
     void handleArithmeticFlags(uint16_t ans);
     void handleArithmeticFlags(uint8_t ans);
