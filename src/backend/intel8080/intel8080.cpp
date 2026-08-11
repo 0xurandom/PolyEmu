@@ -154,6 +154,24 @@ void i8080::emulate8080() {
         case 0xa5: iana(state.l); break;            // ANA L
         case 0xa6: iana(*state.getHLPtr()); break;  // ANA M
         case 0xa7: iana(state.a); break;            // ANA A
+
+        case 0xa8: ixra(state.b); break;            // XRA B
+        case 0xa9: ixra(state.c); break;            // XRA C
+        case 0xaa: ixra(state.d); break;            // XRA D
+        case 0xab: ixra(state.e); break;            // XRA E
+        case 0xac: ixra(state.h); break;            // XRA H
+        case 0xad: ixra(state.l); break;            // XRA L
+        case 0xae: ixra(*state.getHLPtr()); break;  // XRA M
+        case 0xaf: ixra(state.a); break;            // XRA A
+
+        case 0xb0: iora(state.b); break;            // ORA B
+        case 0xb1: iora(state.c); break;            // ORA C
+        case 0xb2: iora(state.d); break;            // ORA D
+        case 0xb3: iora(state.e); break;            // ORA E
+        case 0xb4: iora(state.h); break;            // ORA H
+        case 0xb5: iora(state.l); break;            // ORA L
+        case 0xb6: iora(*state.getHLPtr()); break;  // ORA M
+        case 0xb7: iora(state.a); break;            // ORA A
     }
 
     state.pc++;
@@ -214,6 +232,25 @@ void i8080::iana(uint8_t x) {
     state.cc.cy = 0;
     state.cc.ac = ((state.a | x) & 0x08) ? 1 : 0;
     state.a = ans;
+
+    handleArithmeticFlags(ans);
+}
+
+void i8080::ixra(uint8_t x) {
+    uint8_t ans = state.a ^ x;
+
+    state.cc.cy = 0;
+    state.cc.ac = 0;
+    state.a = ans;
+
+    handleArithmeticFlags(ans);
+}
+
+void i8080::iora(uint8_t x) {
+    uint8_t ans = state.a | x;
+
+    state.cc.cy = 0;
+    state.cc.ac = 0;
 
     handleArithmeticFlags(ans);
 }

@@ -61,6 +61,7 @@ class i8080 : public EmuBackend {
 
     void iana(uint8_t x);
     void ixra(uint8_t x);
+    void iora(uint8_t x);
 
     void handleArithmeticFlags(uint16_t ans);
     void handleArithmeticFlags(uint8_t ans);
