@@ -51,10 +51,18 @@ class i8080 : public EmuBackend {
     State8080 state;
 
     void emulate8080();
+
     void unimplementedInstruction();
+
     void iadd(uint8_t x);
     void iadc(uint8_t x);
     void isub(uint8_t x);
+    void isbb(uint8_t x);
+
+    void iana(uint8_t x);
+    void ixra(uint8_t x);
+
     void handleArithmeticFlags(uint16_t ans);
+    void handleArithmeticFlags(uint8_t ans);
     uint8_t handleParityFlag(uint8_t ans);
 };

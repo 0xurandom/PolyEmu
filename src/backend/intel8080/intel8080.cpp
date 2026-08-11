@@ -43,6 +43,8 @@ void i8080::emulate8080() {
             break;
         }
 
+        case 0x2f: state.a = ~state.a; break;  // CMA
+
         case 0x40: state.b = state.b; break;            // MOV B, B
         case 0x41: state.b = state.c; break;            // MOV B, C
         case 0x42: state.b = state.d; break;            // MOV B, D
@@ -134,6 +136,24 @@ void i8080::emulate8080() {
         case 0x95: isub(state.l); break;            // SUB L
         case 0x96: isub(*state.getHLPtr()); break;  // SUB M
         case 0x97: isub(state.a); break;            // SUB A
+
+        case 0x98: isbb(state.b); break;            // SBB B
+        case 0x99: isbb(state.c); break;            // SBB C
+        case 0x9a: isbb(state.d); break;            // SBB D
+        case 0x9b: isbb(state.e); break;            // SBB E
+        case 0x9c: isbb(state.h); break;            // SBB H
+        case 0x9d: isbb(state.l); break;            // SBB L
+        case 0x9e: isbb(*state.getHLPtr()); break;  // SBB M
+        case 0x9f: isbb(state.a); break;            // SBB A
+
+        case 0xa0: iana(state.b); break;            // ANA B
+        case 0xa1: iana(state.c); break;            // ANA C
+        case 0xa2: iana(state.d); break;            // ANA D
+        case 0xa3: iana(state.e); break;            // ANA E
+        case 0xa4: iana(state.h); break;            // ANA H
+        case 0xa5: iana(state.l); break;            // ANA L
+        case 0xa6: iana(*state.getHLPtr()); break;  // ANA M
+        case 0xa7: iana(state.a); break;            // ANA A
     }
 
     state.pc++;
@@ -177,10 +197,37 @@ void i8080::isub(uint8_t x) {
     handleArithmeticFlags(ans);
 }
 
+void i8080::isbb(uint8_t x) {
+    uint16_t ans =
+        static_cast<uint16_t>(state.a) - static_cast<uint16_t>(x + state.cc.cy);
+
+    state.cc.cy = (state.a < static_cast<uint16_t>(x + state.cc.cy)) ? 1 : 0;
+    state.cc.ac = (~(state.a ^ (ans & 0xff) ^ x) & 0x10) ? 1 : 0;
+    state.a = ans & 0xff;
+
+    handleArithmeticFlags(ans);
+}
+
+void i8080::iana(uint8_t x) {
+    uint8_t ans = state.a & x;
+
+    state.cc.cy = 0;
+    state.cc.ac = ((state.a | x) & 0x08) ? 1 : 0;
+    state.a = ans;
+
+    handleArithmeticFlags(ans);
+}
+
 void i8080::handleArithmeticFlags(uint16_t ans) {
     state.cc.z = ((ans & 0xff) == 0) ? 1 : 0;
     state.cc.s = ((ans & 0x80) ? 1 : 0);
     state.cc.p = handleParityFlag(ans & 0xff);
+}
+
+void i8080::handleArithmeticFlags(uint8_t ans) {
+    state.cc.z = (ans == 0) ? 1 : 0;
+    state.cc.s = ((ans & 0x80) != 0) ? 1 : 0;
+    state.cc.p = handleParityFlag(ans);
 }
 
 uint8_t i8080::handleParityFlag(uint8_t ans) {
