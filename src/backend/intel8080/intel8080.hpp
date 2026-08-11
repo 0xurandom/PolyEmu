@@ -25,14 +25,23 @@ struct State8080 {
     uint8_t l;
     uint16_t sp;
     uint16_t pc;
-    uint8_t *memory;
+    uint8_t* memory;
     ConditionCodes cc;
     uint8_t int_enable;
+
+    uint16_t getHL() { return (h << 8) | l; }
+
+    void setHL(uint16_t val) {
+        h = (val >> 8) & 0xff;
+        l = val & 0xff;
+    }
+
+    uint8_t* getHLPtr() { return &memory[getHL()]; }
 };
 
 class i8080 : public EmuBackend {
    public:
-    virtual bool loadROM(const std::string &filepath) = 0;
+    virtual bool loadROM(const std::string& filepath) = 0;
 
    private:
     int disassemble();
@@ -43,6 +52,7 @@ class i8080 : public EmuBackend {
 
     void emulate8080();
     void unimplementedInstruction();
-    void handleAdditionFlags(uint8_t ans);
+    void iadd(uint8_t x, uint8_t y);
+    void handleAdditionFlags(uint16_t ans);
     uint8_t handleParityFlag(uint8_t ans);
 };
