@@ -60,6 +60,7 @@ class i8080 : public EmuBackend {
    private:
     int disassemble();
     int pc = 0;
+    bool interruptEnabled = false;
     std::vector<unsigned char> filebuffer;
 
     State8080 state;

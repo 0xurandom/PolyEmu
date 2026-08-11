@@ -39,7 +39,7 @@ void i8080::emulate8080() {
         case 0x01: {
             state.c = opcode[1];
             state.b = opcode[2];
-            state.pc += 2;
+            state.pc += 3;
             break;
         }
 
@@ -48,6 +48,7 @@ void i8080::emulate8080() {
             uint8_t ans = state.b + 1;
             handleArithmeticFlags(ans);
             state.cc.ac = ((ans & 0x0f) == 0x0f) ? 1 : 0;
+            state.pc += 1;
             break;
         }
 
@@ -56,6 +57,7 @@ void i8080::emulate8080() {
             uint8_t ans = state.b - 1;
             state.cc.ac = ((ans & 0x0f) != 0) ? 1 : 0;
             handleArithmeticFlags(ans);
+            state.pc += 1;
             break;
         }
 
@@ -83,6 +85,7 @@ void i8080::emulate8080() {
             uint8_t ans = state.c - 1;
             state.cc.ac = ((ans & 0x0f) != 0) ? 1 : 0;
             handleArithmeticFlags(ans);
+            pc += 1;
             break;
         }
 
@@ -99,6 +102,7 @@ void i8080::emulate8080() {
             uint8_t x = state.a;
             state.a = ((x & 1) << 7) | (x >> 1);
             state.cc.cy = ((x & 1) == 1);
+            pc += 1;
             break;
         }
 
@@ -137,12 +141,12 @@ void i8080::emulate8080() {
             break;
         }
 
-            // RAR
+        // RAR
         case 0x1f: {
             uint8_t x = state.a;
             state.a = (state.cc.cy << 7) | (x >> 1);
             state.cc.cy = ((x & 1) == 1);
-
+            pc += 1;
             break;
         }
 
@@ -151,7 +155,7 @@ void i8080::emulate8080() {
             state.l = state.memory[pc + 1];
             state.h = state.memory[pc + 2];
 
-            pc += 2;
+            pc += 3;
             break;
         }
 
@@ -183,9 +187,12 @@ void i8080::emulate8080() {
             break;
         }
 
-        case 0x2f:
+        // CMA
+        case 0x2f: {
             state.a = ~state.a;
-            break;  // CMA
+            pc += 1;
+            break;
+        }
 
         // LXI SP, D16
         case 0x31: {
@@ -381,11 +388,117 @@ void i8080::emulate8080() {
             break;
         }
 
+        // JNZ adr
+        case 0xc2: {
+            if (state.cc.z == 0)
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            else
+                pc += 3;
+
+            break;
+        }
+
+        // JMP adr
+        case 0xc3: {
+            pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            break;
+        }
+
+        // CNZ adr
+        case 0xc4: {
+            if (state.cc.z == 0) {
+                uint16_t adr = pc + 3;
+                state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+                state.memory[state.sp - 2] = adr & 0xff;
+
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 2];
+            } else {
+                pc += 3;
+            }
+
+            break;
+        }
+
         // PUSH B
         case 0xc5: {
             state.memory[state.sp - 1] = state.b;
             state.memory[state.sp - 2] = state.c;
             state.sp -= 2;
+            break;
+        }
+
+        // ADI D8
+        case 0xc6: {
+            uint16_t ans = static_cast<uint16_t>(state.a) +
+                           static_cast<uint16_t>(state.memory[pc + 1]);
+            handleArithmeticFlags(ans);
+
+            state.cc.cy = (ans > 0xff) ? 1 : 0;
+            state.cc.ac =
+                (((state.a & 0x0f) + (state.memory[pc + 1])) > 0x0f) ? 1 : 0;
+            state.a = ans & 0xff;
+            pc += 2;
+            break;
+        }
+
+        // RET
+        case 0xc9: {
+            pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
+
+            state.sp += 2;
+            break;
+        }
+
+        // CALL adr
+        case 0xcd: {
+            uint16_t adr = pc + 3;
+
+            state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+            state.memory[state.sp - 2] = adr & 0xff;
+
+            pc = (state.memory[pc + 2]) | state.memory[pc + 1];
+            break;
+        }
+
+        // POP D
+        case 0xd1: {
+            state.e = state.memory[state.sp];
+            state.d = state.memory[state.sp + 1];
+            state.sp += 2;
+            pc += 1;
+            break;
+        }
+
+        // OUT D8
+        case 0xd3: {
+            // TODO PORTS
+            break;
+        }
+
+        // PUSH D
+        case 0xd5: {
+            state.memory[state.sp - 1] = state.d;
+            state.memory[state.sp - 2] = state.e;
+            state.sp -= 2;
+            pc += 1;
+            break;
+        }
+
+        // POP H
+        case 0xe1: {
+            state.l = state.memory[state.sp];
+            state.h = state.memory[state.sp + 1];
+            state.sp += 2;
+            pc += 2;
+            break;
+        }
+
+        // PUSH H
+        case 0xe5: {
+            state.memory[state.sp - 1] = state.h;
+            state.memory[state.sp - 2] = state.l;
+            state.sp -= 2;
+            pc += 1;
             break;
         }
 
@@ -398,6 +511,20 @@ void i8080::emulate8080() {
             handleArithmeticFlags(ans);
             state.pc++;
 
+            break;
+        }
+
+        // XCHG
+        case 0xeb: {
+            uint8_t temp = state.h;
+            state.h = state.d;
+            state.d = temp;
+
+            temp = state.l;
+            state.l = state.e;
+            state.e = temp;
+
+            pc += 1;
             break;
         }
 
@@ -416,6 +543,13 @@ void i8080::emulate8080() {
             break;
         }
 
+        // DI
+        case 0xf3: {
+            interruptEnabled = false;
+            pc += 1;
+            break;
+        }
+
         // PUSH PSW
         case 0xf5: {
             state.memory[state.sp - 1] = state.a;
@@ -424,6 +558,13 @@ void i8080::emulate8080() {
             state.memory[state.sp - 1] = psw;
             state.sp -= 2;
 
+            break;
+        }
+
+        // EI
+        case 0xfb: {
+            interruptEnabled = true;
+            pc += 1;
             break;
         }
 
