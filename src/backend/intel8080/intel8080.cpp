@@ -1418,6 +1418,30 @@ void i8080::emulate8080() {
             break;
         }
 
+        // JPO adr
+        case 0xe2: {
+            if (state.cc.p == 0) {
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            } else {
+                pc += 3;
+            }
+            break;
+        }
+
+        // XHTL
+        case 0xe3: {
+            uint8_t temp1 = state.memory[state.sp];
+            uint8_t temp2 = state.memory[state.sp + 1];
+
+            state.memory[state.sp] = state.l;
+            state.memory[state.sp + 1] = state.h;
+
+            state.l = temp1;
+            state.h = temp2;
+            pc += 1;
+            break;
+        }
+
         // PUSH H
         case 0xe5: {
             state.memory[state.sp - 1] = state.h;
@@ -1439,6 +1463,46 @@ void i8080::emulate8080() {
             break;
         }
 
+        // RST 4
+        case 0xe7: {
+            uint16_t adr = pc + 1;
+
+            state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+            state.memory[state.sp - 1] = adr & 0xff;
+
+            state.sp -= 2;
+            pc = 0x0020;
+
+            break;
+        }
+
+        // RPE
+        case 0xe8: {
+            if (state.cc.p == 1) {
+                pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
+                state.sp += 2;
+            } else {
+                pc += 1;
+            }
+            break;
+        }
+
+        // PCHL
+        case 0xe9: {
+            pc = (state.h << 8) | state.l;
+            break;
+        }
+
+        // JPE adr
+        case 0xea: {
+            if (state.cc.p == 1)
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            else
+                pc += 3;
+
+            break;
+        }
+
         // XCHG
         case 0xeb: {
             uint8_t temp = state.h;
@@ -1450,6 +1514,64 @@ void i8080::emulate8080() {
             state.e = temp;
 
             pc += 1;
+            break;
+        }
+
+        case 0xec: {
+            if (state.cc.p == 1) {
+                uint16_t adr = pc + 3;
+
+                state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+                state.memory[state.sp - 2] = adr & 0xff;
+
+                state.sp -= 2;
+
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            } else {
+                pc += 3;
+            }
+            break;
+        }
+
+        case 0xed: {
+            unimplementedInstruction();
+            break;
+        }
+
+        // XRI D8
+        case 0xee: {
+            uint8_t byte = state.memory[pc + 1];
+            state.a ^= byte;
+
+            state.cc.cy = 0;
+            state.cc.ac = 0;
+
+            handleArithmeticFlags(state.a);
+            pc += 2;
+            break;
+        }
+
+        // RST 5
+        case 0xef: {
+            uint8_t adr = pc + 1;
+
+            state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+            state.memory[state.sp - 2] = adr & 0xff;
+
+            state.sp -= 2;
+
+            pc = 0x0028;
+            break;
+        }
+
+        // RP
+        case 0xf0: {
+            if (state.cc.s = 0) {
+                pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
+                state.sp += 2;
+            } else {
+                pc += 1;
+            }
             break;
         }
 
@@ -1469,10 +1591,37 @@ void i8080::emulate8080() {
             break;
         }
 
+        // JP adr
+        case 0xf2: {
+            if (state.cc.s == 0)
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            else
+                pc += 3;
+
+            break;
+        }
+
         // DI
         case 0xf3: {
             interruptEnabled = false;
             pc += 1;
+            break;
+        }
+
+        // CP adr
+        case 0xf4: {
+            if (state.cc.s == 0) {
+                uint16_t adr = pc + 3;
+
+                state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+                state.memory[state.sp - 2] = adr & 0xff;
+
+                state.sp -= 2;
+
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            } else {
+                pc += 1;
+            }
             break;
         }
 
@@ -1487,10 +1636,79 @@ void i8080::emulate8080() {
             break;
         }
 
+        // ORI D8
+        case 0xf6: {
+            uint8_t byte = state.memory[pc + 1];
+
+            state.a |= byte;
+            state.cc.cy = 0;
+            state.cc.ac = 0;
+
+            handleArithmeticFlags(state.a);
+            pc += 2;
+            break;
+        }
+
+        // RST 6
+        case 0xf7: {
+            uint16_t adr = pc + 1;
+
+            state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+            state.memory[state.sp - 2] = adr & 0xff;
+
+            state.sp -= 2;
+            pc = 0x0030;
+            break;
+        }
+
+        // RM
+        case 0xf8: {
+            if (state.cc.s == 1) {
+                pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
+                state.sp += 2;
+            } else {
+                pc += 1;
+            }
+            break;
+        }
+
+        // SPHL
+        case 0xf9: {
+            state.sp = (state.h << 8) | state.l;
+            pc += 1;
+            break;
+        }
+
+        // JM adr
+        case 0xfa: {
+            if (state.cc.s == 1)
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            else
+                pc += 3;
+            break;
+        }
+
         // EI
         case 0xfb: {
             interruptEnabled = true;
             pc += 1;
+            break;
+        }
+
+        // CM adr
+        case 0xfc: {
+            if (state.cc.s == 1) {
+                uint16_t adr = pc + 3;
+
+                state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+                state.memory[state.sp - 2] = adr & 0xff;
+
+                state.sp -= 2;
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            } else {
+                pc += 3;
+            }
+
             break;
         }
 
