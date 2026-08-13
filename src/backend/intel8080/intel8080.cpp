@@ -1146,6 +1146,17 @@ void i8080::emulate8080() {
             break;
         }
 
+        // RZ
+        case 0xc8: {
+            if (state.cc.z == 1) {
+                pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
+                state.sp += 2;
+            } else {
+                pc += 1;
+            }
+            break;
+        }
+
         // RET
         case 0xc9: {
             pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
@@ -1153,6 +1164,35 @@ void i8080::emulate8080() {
             state.sp += 2;
             pc += 1;
             break;
+        }
+
+        // JZ adr
+        case 0xca: {
+            if (state.cc.z == 1) {
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            } else {
+                pc += 3;
+            }
+            break;
+        }
+
+        case 0xcb: {
+            unimplementedInstruction();
+            break;
+        }
+
+        // CZ adr
+        case 0xcc: {
+            if (state.cc.z == 1) {
+                uint16_t adr = pc + 3;
+                state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+                state.memory[state.sp - 2] = adr & 0xff;
+
+                state.sp -= 2;
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            } else {
+                pc += 3;
+            }
         }
 
         // CALL adr
@@ -1166,6 +1206,37 @@ void i8080::emulate8080() {
             break;
         }
 
+        // ACI D8
+        case 0xce: {
+            uint8_t byte = state.memory[pc + 1];
+            iadc(byte);
+            pc += 2;
+            break;
+        }
+
+        // RST 1
+        case 0xcf: {
+            uint16_t adr = pc + 1;
+
+            state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+            state.memory[state.sp - 2] = adr & 0xff;
+
+            state.sp -= 2;
+            pc = 0x0008;
+            break;
+        }
+
+        // RNC
+        case 0xd0: {
+            if (state.cc.cy == 0) {
+                pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
+                state.sp += 2;
+            } else {
+                pc += 1;
+            }
+            break;
+        }
+
         // POP D
         case 0xd1: {
             state.e = state.memory[state.sp];
@@ -1175,9 +1246,36 @@ void i8080::emulate8080() {
             break;
         }
 
+        // JNC adr
+        case 0xd2: {
+            if (state.cc.cy == 0) {
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            } else {
+                pc += 3;
+            }
+            break;
+        }
+
         // OUT D8
         case 0xd3: {
-            // TODO PORTS
+            uint8_t port = state.memory[pc + 1];
+            machineOut(port, state.a);
+            pc += 2;
+            break;
+        }
+
+        // CNC adr
+        case 0xd4: {
+            if (state.cc.cy == 0) {
+                uint16_t adr = pc + 3;
+                state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+                state.memory[state.sp - 2] = adr & 0xff;
+
+                state.sp -= 3;
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            } else {
+                pc += 3;
+            }
             break;
         }
 
@@ -1187,6 +1285,127 @@ void i8080::emulate8080() {
             state.memory[state.sp - 2] = state.e;
             state.sp -= 2;
             pc += 1;
+            break;
+        }
+
+        // SUI D8
+        case 0xd6: {
+            uint8_t byte = state.memory[pc + 1];
+
+            uint16_t ans =
+                static_cast<uint16_t>(state.a) + static_cast<uint16_t>(byte);
+
+            state.cc.cy = (state.a < byte) ? 1 : 0;
+            state.cc.ac = ((state.a & 0x0f) > (byte & 0x0f)) ? 0 : 1;
+            state.a = ans & 0xff;
+            handleArithmeticFlags(state.a);
+            pc += 2;
+            break;
+        }
+
+        // RST 2
+        case 0xd7: {
+            uint16_t adr = pc + 1;
+
+            state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+            state.memory[state.sp - 2] = adr & 0xff;
+
+            state.sp -= 2;
+            pc = 0x0010;
+            break;
+        }
+
+        // RC
+        case 0xd8: {
+            if (state.cc.cy == 1) {
+                pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
+                state.sp += 2;
+            } else {
+                pc += 1;
+            }
+            break;
+        }
+
+        case 0xd9: {
+            unimplementedInstruction();
+            break;
+        }
+
+        // JC adr
+        case 0xda: {
+            if (state.cc.cy == 1)
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            else
+                pc += 3;
+            break;
+        }
+
+        // IN D8
+        case 0xdb: {
+            uint8_t port = state.memory[pc + 1];
+            state.a = machineIn(port);
+            pc += 2;
+            break;
+        }
+
+        // CC adr
+        case 0xdc: {
+            if (state.cc.cy == 1) {
+                uint16_t adr = pc + 3;
+
+                state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+                state.memory[state.sp - 2] = adr & 0xff;
+
+                state.sp -= 2;
+                pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            } else {
+                pc += 3;
+            }
+            break;
+        }
+
+        case 0xdd: {
+            unimplementedInstruction();
+            break;
+        }
+
+        // SBI D8
+        case 0xde: {
+            uint8_t byte = state.memory[pc + 1];
+            uint16_t ans = static_cast<uint16_t>(state.a) -
+                           static_cast<uint16_t>(byte) -
+                           static_cast<uint16_t>(state.cc.cy);
+            state.cc.ac =
+                (((state.a & 0x0f) - (byte & 0x0f) - state.cc.cy) ? 0 : 1);
+
+            state.cc.cy = (ans > 0xff) ? 1 : 0;
+            state.a = ans & 0xff;
+            handleArithmeticFlags(state.a);
+            pc += 2;
+            break;
+        }
+
+        // RST 3
+        case 0xdf: {
+            uint16_t adr = pc + 1;
+
+            state.memory[state.sp - 1] = (adr >> 8) & 0xff;
+            state.memory[state.sp - 2] = adr & 0xff;
+
+            state.sp -= 2;
+
+            pc = 0x0018;
+            break;
+        }
+
+        // RPO
+        case 0xe0: {
+            if (state.cc.p == 0) {
+                pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
+                state.sp += 2;
+            } else {
+                pc += 1;
+            }
             break;
         }
 
