@@ -64,8 +64,24 @@ class i8080 : public EmuBackend {
     std::vector<unsigned char> filebuffer;
 
     State8080 state;
+    uint32_t screenBuffer[256 * 224] = {0};
+
+    uint8_t shift0 = 0;
+    uint8_t shift1 = 0;
+    uint8_t shiftOffset = 0;
+
+    uint8_t port[3] = {0};
 
     void emulate8080();
+    void renderScreen();
+
+    uint8_t machineIn(uint8_t port);
+    void machineOut(uint8_t portNum, uint8_t val);
+
+    void updateKeys();
+    void generateInterrupt(int interruptNum);
+
+    void push(uint8_t high, uint8_t low);
 
     void unimplementedInstruction();
 

@@ -241,143 +241,522 @@ void i8080::emulate8080() {
             break;
         }
 
-        case 0x40: state.b = state.b; break;            // MOV B, B
-        case 0x41: state.b = state.c; break;            // MOV B, C
-        case 0x42: state.b = state.d; break;            // MOV B, D
-        case 0x43: state.b = state.e; break;            // MOV B, E
-        case 0x44: state.b = state.h; break;            // MOV B, H
-        case 0x45: state.b = state.l; break;            // MOV B, L
-        case 0x46: state.b = *state.getHLPtr(); break;  // MOV B, M
-        case 0x47: state.b = state.a; break;            // MOV B, A
-        case 0x48: state.c = state.b; break;            // MOV C, B
-        case 0x49: state.c = state.c; break;            // MOV C, C
-        case 0x4a: state.c = state.d; break;            // MOV C, D
-        case 0x4b: state.c = state.e; break;            // MOV C, E
-        case 0x4c: state.c = state.h; break;            // MOV C, H
-        case 0x4d: state.c = state.l; break;            // MOV C, L
-        case 0x4e: state.c = *state.getHLPtr(); break;  // MOV C, M
-        case 0x4f: state.c = state.a; break;            // MOV C, A
-        case 0x50: state.d = state.b; break;            // MOV D, B
-        case 0x51: state.d = state.c; break;            // MOV D, C
-        case 0x52: state.d = state.d; break;            // MOV D, D
-        case 0x53: state.d = state.e; break;            // MOV D, E
-        case 0x54: state.d = state.h; break;            // MOV D, H
-        case 0x55: state.d = state.l; break;            // MOV D, L
-        case 0x56: state.d = *state.getHLPtr(); break;  // MOV D, M
-        case 0x57: state.d = state.a; break;            // MOV D, A
-        case 0x58: state.e = state.b; break;            // MOV E, B
-        case 0x59: state.e = state.c; break;            // MOV E, C
-        case 0x5a: state.e = state.d; break;            // MOV E, D
-        case 0x5b: state.e = state.e; break;            // MOV E, E
-        case 0x5c: state.e = state.h; break;            // MOV E, H
-        case 0x5d: state.e = state.l; break;            // MOV E, L
-        case 0x5e: state.e = *state.getHLPtr(); break;  // MOV E, M
-        case 0x5f: state.e = state.a; break;            // MOV E, A
-        case 0x60: state.h = state.b; break;            // MOV H, B
-        case 0x61: state.h = state.c; break;            // MOV H, C
-        case 0x62: state.h = state.d; break;            // MOV H, D
-        case 0x63: state.h = state.e; break;            // MOV H, E
-        case 0x64: state.h = state.h; break;            // MOV H, H
-        case 0x65: state.h = state.l; break;            // MOV H, L
-        case 0x66: state.h = *state.getHLPtr(); break;  // MOV H, M
-        case 0x67: state.h = state.a; break;            // MOV H, A
-        case 0x68: state.l = state.b; break;            // MOV L, B
-        case 0x69: state.l = state.c; break;            // MOV L, C
-        case 0x6a: state.l = state.d; break;            // MOV L, D
-        case 0x6b: state.l = state.e; break;            // MOV L, E
-        case 0x6c: state.l = state.h; break;            // MOV L, H
-        case 0x6d: state.l = state.l; break;            // MOV L, L
-        case 0x6e: state.l = *state.getHLPtr(); break;  // MOV L, M
-        case 0x6f: state.l = state.a; break;            // MOV L, A
-        case 0x70: *state.getHLPtr() = state.b;         // MOV M, B
-        case 0x71: *state.getHLPtr() = state.c;         // MOV M, C
-        case 0x72: *state.getHLPtr() = state.d;         // MOV M, D
-        case 0x73: *state.getHLPtr() = state.e;         // MOV M, E
-        case 0x74: *state.getHLPtr() = state.h;         // MOV M, H
-        case 0x75: *state.getHLPtr() = state.l;         // MOV M, L
-        case 0x76: break;                               // TODO HLT
-        case 0x77: *state.getHLPtr() = state.a;         // MOV M, A
-        case 0x78: state.a = state.b; break;            // MOV A, B
-        case 0x79: state.a = state.c; break;            // MOV A, C
-        case 0x7a: state.a = state.d; break;            // MOV A, D
-        case 0x7b: state.a = state.e; break;            // MOV A, E
-        case 0x7c: state.a = state.h; break;            // MOV A, H
-        case 0x7d: state.a = state.h; break;            // MOV A, H
-        case 0x7e: state.a = *state.getHLPtr(); break;  // MOV A, M
-        case 0x7f: state.a = state.a; break;            // MOV A, A
+        case 0x40:
+            state.b = state.b;
+            pc += 1;
+            break;  // MOV B, B
+        case 0x41:
+            state.b = state.c;
+            pc += 1;
+            break;  // MOV B, C
+        case 0x42:
+            state.b = state.d;
+            pc += 1;
+            break;  // MOV B, D
+        case 0x43:
+            state.b = state.e;
+            pc += 1;
+            break;  // MOV B, E
+        case 0x44:
+            state.b = state.h;
+            pc += 1;
+            break;  // MOV B, H
+        case 0x45:
+            state.b = state.l;
+            pc += 1;
+            break;  // MOV B, L
+        case 0x46:
+            state.b = *state.getHLPtr();
+            pc += 1;
+            break;  // MOV B, M
+        case 0x47:
+            state.b = state.a;
+            pc += 1;
+            break;  // MOV B, A
+        case 0x48:
+            state.c = state.b;
+            pc += 1;
+            break;  // MOV C, B
+        case 0x49:
+            state.c = state.c;
+            pc += 1;
+            break;  // MOV C, C
+        case 0x4a:
+            state.c = state.d;
+            pc += 1;
+            break;  // MOV C, D
+        case 0x4b:
+            state.c = state.e;
+            pc += 1;
+            break;  // MOV C, E
+        case 0x4c:
+            state.c = state.h;
+            pc += 1;
+            break;  // MOV C, H
+        case 0x4d:
+            state.c = state.l;
+            pc += 1;
+            break;  // MOV C, L
+        case 0x4e:
+            state.c = *state.getHLPtr();
+            pc += 1;
+            break;  // MOV C, M
+        case 0x4f:
+            state.c = state.a;
+            pc += 1;
+            break;  // MOV C, A
+        case 0x50:
+            state.d = state.b;
+            pc += 1;
+            break;  // MOV D, B
+        case 0x51:
+            state.d = state.c;
+            pc += 1;
+            break;  // MOV D, C
+        case 0x52:
+            state.d = state.d;
+            pc += 1;
+            break;  // MOV D, D
+        case 0x53:
+            state.d = state.e;
+            pc += 1;
+            break;  // MOV D, E
+        case 0x54:
+            state.d = state.h;
+            pc += 1;
+            break;  // MOV D, H
+        case 0x55:
+            state.d = state.l;
+            pc += 1;
+            break;  // MOV D, L
+        case 0x56:
+            state.d = *state.getHLPtr();
+            pc += 1;
+            break;  // MOV D, M
+        case 0x57:
+            state.d = state.a;
+            pc += 1;
+            break;  // MOV D, A
+        case 0x58:
+            state.e = state.b;
+            pc += 1;
+            break;  // MOV E, B
+        case 0x59:
+            state.e = state.c;
+            pc += 1;
+            break;  // MOV E, C
+        case 0x5a:
+            state.e = state.d;
+            pc += 1;
+            break;  // MOV E, D
+        case 0x5b:
+            state.e = state.e;
+            pc += 1;
+            break;  // MOV E, E
+        case 0x5c:
+            state.e = state.h;
+            pc += 1;
+            break;  // MOV E, H
+        case 0x5d:
+            state.e = state.l;
+            pc += 1;
+            break;  // MOV E, L
+        case 0x5e:
+            state.e = *state.getHLPtr();
+            pc += 1;
+            break;  // MOV E, M
+        case 0x5f:
+            state.e = state.a;
+            pc += 1;
+            break;  // MOV E, A
+        case 0x60:
+            state.h = state.b;
+            pc += 1;
+            break;  // MOV H, B
+        case 0x61:
+            state.h = state.c;
+            pc += 1;
+            break;  // MOV H, C
+        case 0x62:
+            state.h = state.d;
+            pc += 1;
+            break;  // MOV H, D
+        case 0x63:
+            state.h = state.e;
+            pc += 1;
+            break;  // MOV H, E
+        case 0x64:
+            state.h = state.h;
+            pc += 1;
+            break;  // MOV H, H
+        case 0x65:
+            state.h = state.l;
+            pc += 1;
+            break;  // MOV H, L
+        case 0x66:
+            state.h = *state.getHLPtr();
+            pc += 1;
+            break;  // MOV H, M
+        case 0x67:
+            state.h = state.a;
+            pc += 1;
+            break;  // MOV H, A
+        case 0x68:
+            state.l = state.b;
+            pc += 1;
+            break;  // MOV L, B
+        case 0x69:
+            state.l = state.c;
+            pc += 1;
+            break;  // MOV L, C
+        case 0x6a:
+            state.l = state.d;
+            pc += 1;
+            break;  // MOV L, D
+        case 0x6b:
+            state.l = state.e;
+            pc += 1;
+            break;  // MOV L, E
+        case 0x6c:
+            state.l = state.h;
+            pc += 1;
+            break;  // MOV L, H
+        case 0x6d:
+            state.l = state.l;
+            pc += 1;
+            break;  // MOV L, L
+        case 0x6e:
+            state.l = *state.getHLPtr();
+            pc += 1;
+            break;  // MOV L, M
+        case 0x6f:
+            state.l = state.a;
+            pc += 1;
+            break;  // MOV L, A
+        case 0x70:
+            *state.getHLPtr() = state.b;
+            pc += 1;
+            break;  // MOV M, B
+        case 0x71:
+            *state.getHLPtr() = state.c;
+            pc += 1;
+            break;  // MOV M, C
+        case 0x72:
+            *state.getHLPtr() = state.d;
+            pc += 1;
+            break;  // MOV M, D
+        case 0x73:
+            *state.getHLPtr() = state.e;
+            pc += 1;
+            break;  // MOV M, E
+        case 0x74:
+            *state.getHLPtr() = state.h;
+            pc += 1;
+            break;  // MOV M, H
+        case 0x75:
+            *state.getHLPtr() = state.l;
+            pc += 1;
+            break;         // MOV M, L
+        case 0x76: break;  // TODO HLT
+        case 0x77:
+            *state.getHLPtr() = state.a;
+            pc += 1;
+            break;  // MOV M, A
+        case 0x78:
+            state.a = state.b;
+            pc += 1;
+            break;  // MOV A, B
+        case 0x79:
+            state.a = state.c;
+            pc += 1;
+            break;  // MOV A, C
+        case 0x7a:
+            state.a = state.d;
+            pc += 1;
+            break;  // MOV A, D
+        case 0x7b:
+            state.a = state.e;
+            pc += 1;
+            break;  // MOV A, E
+        case 0x7c:
+            state.a = state.h;
+            pc += 1;
+            break;  // MOV A, H
+        case 0x7d:
+            state.a = state.h;
+            pc += 1;
+            break;  // MOV A, H
+        case 0x7e:
+            state.a = *state.getHLPtr();
+            pc += 1;
+            break;  // MOV A, M
+        case 0x7f:
+            state.a = state.a;
+            pc += 1;
+            break;  // MOV A, A
 
-        case 0x80: iadd(state.b); break;            // ADD B
-        case 0x81: iadd(state.c); break;            // ADD C
-        case 0x82: iadd(state.d); break;            // ADD D
-        case 0x83: iadd(state.e); break;            // ADD E
-        case 0x84: iadd(state.h); break;            // ADD H
-        case 0x85: iadd(state.l); break;            // ADD L
-        case 0x86: iadd(*state.getHLPtr()); break;  // ADD M
-        case 0x87: iadd(state.a); break;            // ADD A
+        case 0x80:
+            iadd(state.b);
+            pc += 1;
+            break;  // ADD B
+        case 0x81:
+            iadd(state.c);
+            pc += 1;
+            break;  // ADD C
+        case 0x82:
+            iadd(state.d);
+            pc += 1;
+            break;  // ADD D
+        case 0x83:
+            iadd(state.e);
+            pc += 1;
+            break;  // ADD E
+        case 0x84:
+            iadd(state.h);
+            pc += 1;
+            break;  // ADD H
+        case 0x85:
+            iadd(state.l);
+            pc += 1;
+            break;  // ADD L
+        case 0x86:
+            iadd(*state.getHLPtr());
+            pc += 1;
+            break;  // ADD M
+        case 0x87:
+            iadd(state.a);
+            pc += 1;
+            break;  // ADD A
 
-        case 0x88: iadc(state.b); break;            // ADC B
-        case 0x89: iadc(state.c); break;            // ADC C
-        case 0x8a: iadc(state.d); break;            // ADC D
-        case 0x8b: iadc(state.e); break;            // ADC E
-        case 0x8c: iadc(state.h); break;            // ADC H
-        case 0x8d: iadc(state.l); break;            // ADC L
-        case 0x8e: iadc(*state.getHLPtr()); break;  // ADC M
-        case 0x8f: iadc(state.a); break;            // ADC A
+        case 0x88:
+            iadc(state.b);
+            pc += 1;
+            break;  // ADC B
+        case 0x89:
+            iadc(state.c);
+            pc += 1;
+            break;  // ADC C
+        case 0x8a:
+            iadc(state.d);
+            pc += 1;
+            break;  // ADC D
+        case 0x8b:
+            iadc(state.e);
+            pc += 1;
+            break;  // ADC E
+        case 0x8c:
+            iadc(state.h);
+            pc += 1;
+            break;  // ADC H
+        case 0x8d:
+            iadc(state.l);
+            pc += 1;
+            break;  // ADC L
+        case 0x8e:
+            iadc(*state.getHLPtr());
+            pc += 1;
+            break;  // ADC M
+        case 0x8f:
+            iadc(state.a);
+            pc += 1;
+            break;  // ADC A
 
-        case 0x90: isub(state.b); break;            // SUB B
-        case 0x91: isub(state.c); break;            // SUB C
-        case 0x92: isub(state.d); break;            // SUB D
-        case 0x93: isub(state.e); break;            // SUB E
-        case 0x94: isub(state.h); break;            // SUB H
-        case 0x95: isub(state.l); break;            // SUB L
-        case 0x96: isub(*state.getHLPtr()); break;  // SUB M
-        case 0x97: isub(state.a); break;            // SUB A
+        case 0x90:
+            isub(state.b);
+            pc += 1;
+            break;  // SUB B
+        case 0x91:
+            isub(state.c);
+            pc += 1;
+            break;  // SUB C
+        case 0x92:
+            isub(state.d);
+            pc += 1;
+            break;  // SUB D
+        case 0x93:
+            isub(state.e);
+            pc += 1;
+            break;  // SUB E
+        case 0x94:
+            isub(state.h);
+            pc += 1;
+            break;  // SUB H
+        case 0x95:
+            isub(state.l);
+            pc += 1;
+            break;  // SUB L
+        case 0x96:
+            isub(*state.getHLPtr());
+            pc += 1;
+            break;  // SUB M
+        case 0x97:
+            isub(state.a);
+            pc += 1;
+            break;  // SUB A
 
-        case 0x98: isbb(state.b); break;            // SBB B
-        case 0x99: isbb(state.c); break;            // SBB C
-        case 0x9a: isbb(state.d); break;            // SBB D
-        case 0x9b: isbb(state.e); break;            // SBB E
-        case 0x9c: isbb(state.h); break;            // SBB H
-        case 0x9d: isbb(state.l); break;            // SBB L
-        case 0x9e: isbb(*state.getHLPtr()); break;  // SBB M
-        case 0x9f: isbb(state.a); break;            // SBB A
+        case 0x98:
+            isbb(state.b);
+            pc += 1;
+            break;  // SBB B
+        case 0x99:
+            isbb(state.c);
+            pc += 1;
+            break;  // SBB C
+        case 0x9a:
+            isbb(state.d);
+            pc += 1;
+            break;  // SBB D
+        case 0x9b:
+            isbb(state.e);
+            pc += 1;
+            break;  // SBB E
+        case 0x9c:
+            isbb(state.h);
+            pc += 1;
+            break;  // SBB H
+        case 0x9d:
+            isbb(state.l);
+            pc += 1;
+            break;  // SBB L
+        case 0x9e:
+            isbb(*state.getHLPtr());
+            pc += 1;
+            break;  // SBB M
+        case 0x9f:
+            isbb(state.a);
+            pc += 1;
+            break;  // SBB A
 
-        case 0xa0: iana(state.b); break;            // ANA B
-        case 0xa1: iana(state.c); break;            // ANA C
-        case 0xa2: iana(state.d); break;            // ANA D
-        case 0xa3: iana(state.e); break;            // ANA E
-        case 0xa4: iana(state.h); break;            // ANA H
-        case 0xa5: iana(state.l); break;            // ANA L
-        case 0xa6: iana(*state.getHLPtr()); break;  // ANA M
-        case 0xa7: iana(state.a); break;            // ANA A
+        case 0xa0:
+            iana(state.b);
+            pc += 1;
+            break;  // ANA B
+        case 0xa1:
+            iana(state.c);
+            pc += 1;
+            break;  // ANA C
+        case 0xa2:
+            iana(state.d);
+            pc += 1;
+            break;  // ANA D
+        case 0xa3:
+            iana(state.e);
+            pc += 1;
+            break;  // ANA E
+        case 0xa4:
+            iana(state.h);
+            pc += 1;
+            break;  // ANA H
+        case 0xa5:
+            iana(state.l);
+            pc += 1;
+            break;  // ANA L
+        case 0xa6:
+            iana(*state.getHLPtr());
+            pc += 1;
+            break;  // ANA M
+        case 0xa7:
+            iana(state.a);
+            pc += 1;
+            break;  // ANA A
 
-        case 0xa8: ixra(state.b); break;            // XRA B
-        case 0xa9: ixra(state.c); break;            // XRA C
-        case 0xaa: ixra(state.d); break;            // XRA D
-        case 0xab: ixra(state.e); break;            // XRA E
-        case 0xac: ixra(state.h); break;            // XRA H
-        case 0xad: ixra(state.l); break;            // XRA L
-        case 0xae: ixra(*state.getHLPtr()); break;  // XRA M
-        case 0xaf: ixra(state.a); break;            // XRA A
+        case 0xa8:
+            ixra(state.b);
+            pc += 1;
+            break;  // XRA B
+        case 0xa9:
+            ixra(state.c);
+            pc += 1;
+            break;  // XRA C
+        case 0xaa:
+            ixra(state.d);
+            pc += 1;
+            break;  // XRA D
+        case 0xab:
+            ixra(state.e);
+            pc += 1;
+            break;  // XRA E
+        case 0xac:
+            ixra(state.h);
+            pc += 1;
+            break;  // XRA H
+        case 0xad:
+            ixra(state.l);
+            pc += 1;
+            break;  // XRA L
+        case 0xae:
+            ixra(*state.getHLPtr());
+            pc += 1;
+            break;  // XRA M
+        case 0xaf:
+            ixra(state.a);
+            pc += 1;
+            break;  // XRA A
 
-        case 0xb0: iora(state.b); break;            // ORA B
-        case 0xb1: iora(state.c); break;            // ORA C
-        case 0xb2: iora(state.d); break;            // ORA D
-        case 0xb3: iora(state.e); break;            // ORA E
-        case 0xb4: iora(state.h); break;            // ORA H
-        case 0xb5: iora(state.l); break;            // ORA L
-        case 0xb6: iora(*state.getHLPtr()); break;  // ORA M
-        case 0xb7: iora(state.a); break;            // ORA A
+        case 0xb0:
+            iora(state.b);
+            pc += 1;
+            break;  // ORA B
+        case 0xb1:
+            iora(state.c);
+            pc += 1;
+            break;  // ORA C
+        case 0xb2:
+            iora(state.d);
+            pc += 1;
+            break;  // ORA D
+        case 0xb3:
+            iora(state.e);
+            pc += 1;
+            break;  // ORA E
+        case 0xb4:
+            iora(state.h);
+            pc += 1;
+            break;  // ORA H
+        case 0xb5:
+            iora(state.l);
+            pc += 1;
+            break;  // ORA L
+        case 0xb6:
+            iora(*state.getHLPtr());
+            pc += 1;
+            break;  // ORA M
+        case 0xb7:
+            iora(state.a);
+            pc += 1;
+            break;  // ORA A
 
-        case 0xb8: icmp(state.b); break;            // CMP B
-        case 0xb9: icmp(state.c); break;            // CMP C
-        case 0xba: icmp(state.d); break;            // CMP D
-        case 0xbb: icmp(state.e); break;            // CMP E
-        case 0xbc: icmp(state.h); break;            // CMP H
-        case 0xbd: icmp(state.l); break;            // CMP L
-        case 0xbe: icmp(*state.getHLPtr()); break;  // CMP M
+        case 0xb8:
+            icmp(state.b);
+            pc += 1;
+            break;  // CMP B
+        case 0xb9:
+            icmp(state.c);
+            pc += 1;
+            break;  // CMP C
+        case 0xba:
+            icmp(state.d);
+            pc += 1;
+            break;  // CMP D
+        case 0xbb:
+            icmp(state.e);
+            pc += 1;
+            break;  // CMP E
+        case 0xbc:
+            icmp(state.h);
+            pc += 1;
+            break;  // CMP H
+        case 0xbd:
+            icmp(state.l);
+            pc += 1;
+            break;  // CMP L
+        case 0xbe:
+            icmp(*state.getHLPtr());
+            pc += 1;
+            break;  // CMP M
         case 0xbf:
             icmp(state.a);
+            pc += 1;
             break;  // CMP A
 
         // POP B
@@ -385,6 +764,7 @@ void i8080::emulate8080() {
             state.c = state.memory[state.sp];
             state.b = state.memory[state.sp + 1];
             state.sp += 2;
+            pc += 1;
             break;
         }
 
@@ -401,6 +781,7 @@ void i8080::emulate8080() {
         // JMP adr
         case 0xc3: {
             pc = (state.memory[pc + 2] << 8) | state.memory[pc + 1];
+            pc += 3;
             break;
         }
 
@@ -424,6 +805,7 @@ void i8080::emulate8080() {
             state.memory[state.sp - 1] = state.b;
             state.memory[state.sp - 2] = state.c;
             state.sp -= 2;
+            pc += 1;
             break;
         }
 
@@ -446,6 +828,7 @@ void i8080::emulate8080() {
             pc = (state.memory[state.sp + 1] << 8) | state.memory[state.sp];
 
             state.sp += 2;
+            pc += 1;
             break;
         }
 
@@ -509,7 +892,7 @@ void i8080::emulate8080() {
             state.cc.cy = 0;
             state.a = ans;
             handleArithmeticFlags(ans);
-            state.pc++;
+            state.pc += 1;
 
             break;
         }
@@ -540,6 +923,7 @@ void i8080::emulate8080() {
             state.cc.ac = ((psw & 0x10) == 0x10);
 
             state.sp += 2;
+            pc += 1;
             break;
         }
 
@@ -557,7 +941,7 @@ void i8080::emulate8080() {
                            state.cc.cy << 3 | state.cc.ac << 4);
             state.memory[state.sp - 1] = psw;
             state.sp -= 2;
-
+            pc += 1;
             break;
         }
 
@@ -568,24 +952,136 @@ void i8080::emulate8080() {
             break;
         }
 
-        // CPI
+        // CPI D8
         case 0xfe: {
             uint8_t x = state.a - opcode[1];
 
             state.cc.cy = (state.a < opcode[1]) ? 1 : 0;
             state.pc++;
             handleArithmeticFlags(x);
-
+            pc += 2;
             break;
         }
 
         // RST 7
         case 0xff: {
+            pc += 1;
             break;
         }
     }
 
     state.pc++;
+}
+
+void i8080::renderScreen() {
+    int pixelCount = 0;
+
+    for (int adr = 0x2400; adr < 0x4000; adr++) {
+        uint8_t pixelByte = state.memory[adr];
+
+        for (int i = 0; i < 8; i++) {
+            bool pixel = (pixelByte >> i) & i;
+
+            if (pixel)
+                screenBuffer[pixelCount] = 0xFFFFFFFF;
+            else
+                screenBuffer[pixelCount] = 0xFF000000;
+        }
+
+        pixelCount++;
+    }
+}
+
+uint8_t i8080::machineIn(uint8_t portNum) {
+    uint8_t a = 0;
+
+    switch (portNum) {
+        case 1: {
+            a = port[1];
+            break;
+        }
+
+        case 2: {
+            a = port[2];
+            break;
+        }
+
+        case 3: {
+            uint16_t v = (shift1 << 8) | shift0;
+            a = ((v >> (8 - shiftOffset)) & 0xff);
+            break;
+        }
+    }
+
+    return a;
+}
+
+void i8080::machineOut(uint8_t portNum, uint8_t val) {
+    switch (portNum) {
+        case 2: {
+            shiftOffset = val & 0x7;
+            break;
+        }
+
+        case 4: {
+            shift0 = shift1;
+            shift1 = val;
+            break;
+        }
+    }
+}
+
+void i8080::updateKeys() {
+    if (IsKeyDown(KEY_C))
+        port[1] |= 0x01;
+    else
+        port[1] &= ~0x01;
+    if (IsKeyDown(KEY_TWO))
+        port[1] |= 0x02;
+    else
+        port[1] &= ~0x02;
+    if (IsKeyDown(KEY_ENTER))
+        port[1] |= 0x04;
+    else
+        port[1] &= ~0x04;
+
+    if (IsKeyDown(KEY_SPACE))
+        port[1] |= 0x10;
+    else
+        port[1] &= ~0x01;
+    if (IsKeyDown(KEY_LEFT))
+        port[1] |= 0x20;
+    else
+        port[1] &= ~0x20;
+    if (IsKeyDown(KEY_RIGHT))
+        port[1] |= 0x40;
+    else
+        port[1] &= ~0x40;
+
+    if (IsKeyDown(KEY_W))
+        port[2] |= 0x10;
+    else
+        port[2] &= ~0x10;
+    if (IsKeyDown(KEY_A))
+        port[2] |= 0x20;
+    else
+        port[2] &= ~0x20;
+    if (IsKeyDown(KEY_D))
+        port[2] |= 0x40;
+    else
+        port[2] &= ~0x40;
+}
+
+void i8080::generateInterrupt(int interruptNum) {
+    push((state.pc & 0xff00) >> 8, (state.pc & 0xff));
+    state.pc = 8 * interruptNum;
+}
+
+void i8080::push(uint8_t high, uint8_t low) {
+    state.memory[state.sp - 1] = high;
+    state.memory[state.sp - 2] = low;
+
+    state.sp -= 2;
 }
 
 void i8080::unimplementedInstruction() {
