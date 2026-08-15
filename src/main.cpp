@@ -15,7 +15,6 @@ int main(int argc, char** argv) {
     Vector2 mouseCell = {0.0f, 0.0f};
 
     EmuWindow emuWindow;
-    emuWindow.init();
     emuWindow.initDisplay(Chip8::displayWidth, Chip8::displayHeight);
 
     if (argc > 1) {
@@ -63,6 +62,7 @@ int main(int argc, char** argv) {
         emuWindow.drawMenuBar();
 
         if (emuWindow.getSettingsOpened()) emuWindow.drawSettingsWindow();
+        if (emuWindow.gethelpOpened()) emuWindow.drawHelpWindow();
 
         EndDrawing();
 

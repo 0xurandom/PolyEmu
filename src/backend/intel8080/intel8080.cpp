@@ -28,6 +28,25 @@ bool i8080::loadROM(const std::string& filepath) {
     return true;
 }
 
+void i8080::reset() {
+    state.pc = 0x0000;
+    state.int_enable = 0;
+
+    state.a = 0;
+    state.b = 0;
+    state.c = 0;
+    state.d = 0;
+    state.e = 0;
+    state.h = 0;
+    state.l = 0;
+
+    state.cc.z = 0;
+    state.cc.s = 0;
+    state.cc.p = 0;
+    state.cc.cy = 0;
+    state.cc.ac = 0;
+}
+
 void i8080::emulate8080() {
     unsigned char* opcode = &state.memory[state.pc];
 
@@ -1709,6 +1728,11 @@ void i8080::emulate8080() {
                 pc += 3;
             }
 
+            break;
+        }
+
+        case 0xfd: {
+            unimplementedInstruction();
             break;
         }
 

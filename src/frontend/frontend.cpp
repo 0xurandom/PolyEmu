@@ -17,7 +17,7 @@
 #include "raygui.h"
 #include "raylib.h"
 
-void EmuWindow::init() {
+EmuWindow::EmuWindow() {
     initConfig();
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
@@ -42,6 +42,11 @@ void EmuWindow::init() {
     SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
 }
 
+void EmuWindow::closeEmuWindow() {
+    UnloadTexture(displayTexture);
+    CloseWindow();
+}
+
 void EmuWindow::initDisplay(int width, int height) {
     Image img = GenImageColor(width, height, BLACK);
 
@@ -53,12 +58,12 @@ void EmuWindow::initDisplay(int width, int height) {
     pixelBuffer.resize(width * height);
 }
 
-void EmuWindow::updateDisplay(const uint8_t *pixels, int width, int height) {
+void EmuWindow::updateDisplay(const uint8_t* pixels, int width, int height) {
     for (int i = 0; i < width * height; i++) {
         if (pixels[i])
-            pixelBuffer[i] = WHITE;
+            pixelBuffer[i] = config.chip8Background;
         else
-            pixelBuffer[i] = BLACK;
+            pixelBuffer[i] = config.chip8Foreground;
     }
 
     UpdateTexture(displayTexture, pixelBuffer.data());
@@ -112,7 +117,7 @@ std::string EmuWindow::getRomName(const std::string filePath) {
 }
 
 void EmuWindow::handleROM(const std::string filePath) {
-    const char *extension = GetFileExtension(filePath.c_str());
+    const char* extension = GetFileExtension(filePath.c_str());
 
     if (extension == nullptr) {
         std::cout << "Error: Unknown file" << std::endl;
@@ -120,6 +125,8 @@ void EmuWindow::handleROM(const std::string filePath) {
     }
 
     if (strcmp(extension, ".ch8") == 0) {
+        curBackend = Backend::Chip8;
+
         if (getRomIsLoaded()) {
             getChip8Ptr().reset();
         }
@@ -141,24 +148,27 @@ void EmuWindow::handleROM(const std::string filePath) {
 }
 
 void EmuWindow::runEmuFrame() {
-    updateChip8KeysPressed();
+    if (curBackend == Backend::Chip8) {
+        updateChip8KeysPressed();
 
-    int speed;
+        int speed;
 
-    if (inFF)
-        speed = getChip8InstPerFrame() + chip8FFincrement;
-    else
-        speed = getChip8InstPerFrame();
+        if (inFF)
+            speed = getChip8InstPerFrame() + chip8FFincrement;
+        else
+            speed = getChip8InstPerFrame();
 
-    for (int i = 0; i < speed; i++) {
-        Opcode opcode = chip8->getOpcode();
-        chip8->handleOpcode(opcode);
+        for (int i = 0; i < speed; i++) {
+            Opcode opcode = chip8->getOpcode();
+            chip8->handleOpcode(opcode);
+        }
+
+        chip8->runTimers();
+
+        updateDisplay(chip8->getDisplay(), Chip8::displayWidth,
+                      Chip8::displayHeight);
     }
-
-    chip8->runTimers();
-
-    updateDisplay(chip8->getDisplay(), Chip8::displayWidth,
-                  Chip8::displayHeight);
+    // else if ()
 }
 
 void EmuWindow::drawGreeting() {
@@ -224,7 +234,7 @@ void EmuWindow::displayIndicator(std::string indicator) {
 void EmuWindow::openFileDialog() {
     NFD_Init();
 
-    nfdu8char_t *outPath;
+    nfdu8char_t* outPath;
     nfdu8filteritem_t filters[2] = {{"Chip8 ROMs", "ch8"}};
     nfdopendialogu8args_t args = {0};
     args.filterList = filters;
@@ -349,11 +359,50 @@ void EmuWindow::drawSettingsWindow() {
                  TextFormat("Key %c", chip8Buttons[i]));
         if (GuiButton(Rectangle{itemStartX + 120.0f, currentY, 150.0f, 30.0f},
                       "Bind Key")) {
-            std::cout << "button pressed:" << chip8Buttons[i] << std::endl;
         }
     }
 
+    float backgroundY = itemStartY + (0 * 40) + settingsScrollPos.y;
+    GuiLabel(Rectangle{itemStartX, backgroundY, 100.0f, 30.0f},
+             "Chip8 Background: ");
+    if (GuiDropdownBox(
+            Rectangle{itemStartX + 120.0f, backgroundY, 150.0f, 30.0f},
+            "White;Black;Red;Maroon;Green;Dark Green;Blue;Dark "
+            "Blue;Purple;DarkPurple",
+            &settingsMenu.backgroundActive, settingsMenu.backgroundEditMode)) {
+        settingsMenu.backgroundEditMode = !settingsMenu.backgroundEditMode;
+    }
+
+    float foregroundY = itemStartY + (1 * 40) + settingsScrollPos.y;
+    GuiLabel(Rectangle{itemStartX, backgroundY, 100.0f, 30.0f},
+             "Chip8 Foreground:");
+    if (GuiDropdownBox(
+            Rectangle{itemStartX + 120.0f, foregroundY, 150.0f, 30.0f},
+            "White;Black;Red;Maroon;Green;Dark Green;Blue;Dark "
+            "Blue;Purple;DarkPurple",
+            &settingsMenu.foregroundActive, settingsMenu.foregroundEditMode)) {
+        settingsMenu.foregroundEditMode = !settingsMenu.foregroundEditMode;
+    }
+
     EndScissorMode();
+}
+
+void EmuWindow::drawHelpWindow() {
+    const float screenWidth = GetScreenWidth();
+    const float screenHeight = GetScreenHeight();
+
+    const float helpWidth = screenWidth / 3;
+    const float helpHeight = screenHeight * 0.9f;
+
+    const float helpX = (screenWidth / 2 - (helpWidth / 2));
+    const float helpY = (screenHeight / 2) - (helpHeight / 2);
+
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.5f));
+
+    if (GuiWindowBox(Rectangle{helpX, helpY, helpWidth, helpHeight}, "Help")) {
+        setHelpOpened(false);
+        return;
+    }
 }
 
 void EmuWindow::toggleBorderlessWindow() {
@@ -417,14 +466,14 @@ std::string EmuWindow::getConfigPath() {
     std::string configPath = "";
 
 #if defined(__linux__)
-    char *home = std::getenv("HOME");
+    char* home = std::getenv("HOME");
     if (home != NULL)
         configPath = std::string(home) + "/.config/PolyEmu.conf";
     else
         std::cerr << "Error: Could not get home path for linux" << std::endl;
 
 #elif defined(_WIN32)
-    char *appdata = std::getenv("APPDATA");
+    char* appdata = std::getenv("APPDATA");
 
     if (appdata != NULL)
         configPath = std::string(appdata) + "\\PolyEmu.conf";
@@ -540,10 +589,12 @@ void EmuWindow::drawMenuBar() {
     const float fileWidth = 70.0f;
     const float emulatorWidth = 125.0f;
     const float windowWidth = 175.0f;
+    const float helpWidth = 70.0f;
 
     const float fileX = 0.0f;
     const float emulatorX = fileX + fileWidth;
     const float windowX = emulatorX + emulatorWidth;
+    const float helpX = windowX + windowWidth;
 
     if (GuiDropdownBox(
             Rectangle{fileX, 0, fileWidth, (float)getMenubarHeight()},
@@ -568,8 +619,8 @@ void EmuWindow::drawMenuBar() {
     std::string emulatorFmtString =
         "Emulator;{};{};Increase speed;Decrease speed;Reset "
         "Speed;Settings;Reset";
-    const char *fpsText = getShowFPS() ? "Hide FPS" : "Show FPS";
-    const char *pauseText = getIsPaused() ? "Resume" : "Pause";
+    const char* fpsText = getShowFPS() ? "Hide FPS" : "Show FPS";
+    const char* pauseText = getIsPaused() ? "Resume" : "Pause";
 
     std::string emulatorDropdown = std::vformat(
         emulatorFmtString, std::make_format_args(fpsText, pauseText));
@@ -626,7 +677,7 @@ void EmuWindow::drawMenuBar() {
     if (GuiDropdownBox(
             Rectangle{windowX, 0, windowWidth, (float)getMenubarHeight()},
             "Window;Toggle Fullscreen;Toggle Borderless "
-            "Window;Restore Window Size;Increase Scale;Decrease Scale",
+            "Window;Remember Window Size;Increase Scale;Decrease Scale",
             &menuBar.viewActive, menuBar.viewEditMode)) {
         menuBar.viewEditMode = !menuBar.viewEditMode;
 
@@ -663,14 +714,20 @@ void EmuWindow::drawMenuBar() {
 
         menuBar.viewActive = 0;
     }
-}
 
+    if (GuiDropdownBox(
+            Rectangle{helpX, 0, helpWidth, (float)getMenubarHeight()},
+            "Help;Show Shortcuts", &menuBar.helpActive, menuBar.helpEditMode)) {
+        menuBar.helpEditMode = !menuBar.helpEditMode;
+        switch (menuBar.helpActive) {
+            case 1: {
+                setHelpOpened(true);
+                break;
+            }
+        }
+    }
+}
 void EmuWindow::resetEmu() {
     getChip8Ptr().reset();
     getChip8Ptr().loadROM(gettChip8RomPath());
-}
-
-void EmuWindow::closeEmuWindow() {
-    UnloadTexture(displayTexture);
-    CloseWindow();
 }

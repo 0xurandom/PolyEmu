@@ -50,7 +50,9 @@ class Chip8 : public EmuBackend {
    public:
     Chip8() { reset(); }
 
-    bool loadROM(const std::string &filepath) override;
+    bool loadROM(const std::string& filepath) override;
+    void reset() override;
+    // void runEmuFrame() override;
 
     Opcode getOpcode();
     void handleOpcode(Opcode opcode);
@@ -59,7 +61,7 @@ class Chip8 : public EmuBackend {
 
     void loadFonts();
 
-    uint8_t *getDisplay() { return display; }
+    uint8_t* getDisplay() { return display; }
 
     static constexpr int displayWidth = 64;
     static constexpr int displayHeight = 32;
@@ -74,8 +76,6 @@ class Chip8 : public EmuBackend {
 
         keys[key] = state;
     }
-
-    void reset();
 
    private:
     // display
@@ -139,10 +139,10 @@ class Chip8 : public EmuBackend {
     void binaryOr(Opcode opcode);
     void binaryAnd(Opcode opcode);
     void binaryXor(Opcode opcode);
-    void subtractYfromX(Opcode opcode, bool *underflow);
-    void subtractXfromY(Opcode opcode, bool *underflow);
-    void shiftRight(Opcode opcode, uint8_t *shiftedBit);
-    void shiftLeft(Opcode opcode, uint8_t *shiftedBit);
+    void subtractYfromX(Opcode opcode, bool* underflow);
+    void subtractXfromY(Opcode opcode, bool* underflow);
+    void shiftRight(Opcode opcode, uint8_t* shiftedBit);
+    void shiftLeft(Opcode opcode, uint8_t* shiftedBit);
     void skipInstruction();
     void setIndex(Opcode opcode);
     void jump(Opcode opcode);
@@ -153,7 +153,7 @@ class Chip8 : public EmuBackend {
     void setVXToDelay(Opcode opcode);
     void setDelayToVX(Opcode opcode);
     void setSoundToVX(Opcode opcode);
-    void addToIndex(Opcode opcode, bool *overflow);
+    void addToIndex(Opcode opcode, bool* overflow);
     void getKey(Opcode opcode);
     void setFont(Opcode opcode);
     void binaryDecimalConversion(Opcode opcode);

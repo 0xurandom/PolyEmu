@@ -14,14 +14,23 @@ const KeyboardKey Chip8keymap[16] = {
     KEY_S, KEY_D,   KEY_Z,   KEY_C,     KEY_FOUR, KEY_R, KEY_F, KEY_V,
 };
 
+enum class Backend {
+    Chip8,
+    i8080,
+};
+
 class EmuWindow {
    public:
-    void init();
+    EmuWindow();
+    virtual ~EmuWindow();
+
     void initDisplay(int width, int height);
-    void updateDisplay(const uint8_t *pixels, int width, int height);
+    void updateDisplay(const uint8_t* pixels, int width, int height);
     void drawDisplay();
 
     void drawSettingsWindow();
+    void drawHelpWindow();
+    void drawMenuBar();
 
     void closeEmuWindow();
 
@@ -38,8 +47,6 @@ class EmuWindow {
 
     int getMenuBarWidth() { return menuBarWidth; }
     int getMenubarHeight() { return menuBarHeight; }
-
-    void drawMenuBar();
 
     bool getScaleUpdated() { return scaleUpdated; }
     void setScaleUpdated(bool val) { scaleUpdated = val; }
@@ -62,6 +69,9 @@ class EmuWindow {
 
     bool getSettingsOpened() { return settingsOpened; }
     void setSettingsOpened(bool val) { settingsOpened = val; }
+
+    bool gethelpOpened() { return helpOpened; }
+    void setHelpOpened(bool val) { helpOpened = val; }
 
     int getChip8InstPerFrame() { return chip8InstPerFrame; }
     void setchip8InstPerFrame(int val) { chip8InstPerFrame = val; }
@@ -89,19 +99,33 @@ class EmuWindow {
 
     void checkKeyboardShortcuts();
 
-    Chip8 &getChip8Ptr() { return *chip8; }
+    Chip8& getChip8Ptr() { return *chip8; }
     std::string gettChip8RomPath() { return chip8RomPath; }
 
+    // EmuBackend& getBackendPtr() {}
+
    private:
+    Backend curBackend;
+
     struct {
         bool fileEditMode = false;
         bool emulatorEditMode = false;
         bool viewEditMode = false;
+        bool helpEditMode = false;
 
         int fileActive = 0;
         int emulatorActive = 0;
         int viewActive = 0;
+        int helpActive = 0;
     } menuBar;
+
+    struct {
+        bool backgroundEditMode = false;
+        bool foregroundEditMode = true;
+
+        int backgroundActive = 0;
+        int foregroundActive = 0;
+    } settingsMenu;
 
     struct {
         bool showFPS = false;
@@ -112,6 +136,9 @@ class EmuWindow {
 
         int chip8Scale = 10;
         int chip8InstPerFrame = 11;
+
+        Color chip8Background = WHITE;
+        Color chip8Foreground = BLACK;
     } config;
 
     struct {
@@ -128,6 +155,7 @@ class EmuWindow {
     bool fullscreenToggle = false;
     bool inFullscreen = false;
     bool settingsOpened = false;
+    bool helpOpened = false;
 
     Vector2 settingsScrollPos = {0, 0};
     Rectangle settingsScrollView = {0};

@@ -56,6 +56,9 @@ struct State8080 {
 class i8080 : public EmuBackend {
    public:
     virtual bool loadROM(const std::string& filepath) = 0;
+    virtual void reset();
+
+    i8080() { reset(); }
 
    private:
     int disassemble();
