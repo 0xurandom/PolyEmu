@@ -14,6 +14,7 @@ add_executable(polyemu)
 target_sources(polyemu PRIVATE
   src/main.cpp
   src/backend/chip8/chip8.cpp
+  src/backend/intel8080/intel8080.cpp
   src/frontend/frontend.cpp
 )
 

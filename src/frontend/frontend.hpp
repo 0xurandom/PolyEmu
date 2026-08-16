@@ -3,11 +3,11 @@
 #include <raylib.h>
 
 #include <cstdint>
-#include <cstring>
 #include <memory>
 #include <vector>
 
 #include "../backend/chip8/chip8.hpp"
+#include "../backend/intel8080/intel8080.hpp"
 
 const KeyboardKey Chip8keymap[16] = {
     KEY_X, KEY_ONE, KEY_TWO, KEY_THREE, KEY_Q,    KEY_W, KEY_E, KEY_A,
@@ -22,7 +22,6 @@ enum class Backend {
 class EmuWindow {
    public:
     EmuWindow();
-    virtual ~EmuWindow();
 
     void initDisplay(int width, int height);
     void updateDisplay(const uint8_t* pixels, int width, int height);
@@ -100,6 +99,7 @@ class EmuWindow {
     void checkKeyboardShortcuts();
 
     Chip8& getChip8Ptr() { return *chip8; }
+    i8080& getI8080Ptr() { return *intel8080; }
     std::string gettChip8RomPath() { return chip8RomPath; }
 
     // EmuBackend& getBackendPtr() {}
@@ -187,4 +187,8 @@ class EmuWindow {
     int defaultInstPerFrame = 11;
 
     std::unique_ptr<Chip8> chip8 = std::make_unique<Chip8>();
+
+    // intel 8080
+    std::unique_ptr<i8080> intel8080 = std::make_unique<i8080>();
+    int i8080HalfinstPerFrame = 4000;
 };

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <string>
-#include <vector>
 
 #include "../backend.hpp"
 
@@ -25,7 +24,7 @@ struct State8080 {
     uint8_t l;
     uint16_t sp;
     uint16_t pc;
-    uint8_t* memory;
+    uint8_t memory[65536];
     ConditionCodes cc;
     uint8_t int_enable;
 
@@ -55,19 +54,30 @@ struct State8080 {
 
 class i8080 : public EmuBackend {
    public:
-    virtual bool loadROM(const std::string& filepath) = 0;
-    virtual void reset();
+    virtual bool loadROM(const std::string& filepath) override;
+    virtual void reset() override;
 
     i8080() { reset(); }
+
+    static constexpr int displayWidth = 224;
+    static constexpr int displayHeight = 256;
+
+    int getDisplayWidth() const override { return displayWidth; }
+    int getDisplayHeight() const override { return displayHeight; }
+
+    void emulate8080();
+    void renderScreen();
+    const uint32_t* getScreenBuffer() { return screenBuffer; }
+
+    void generateInterrupt(int interruptNum);
 
    private:
     int disassemble();
     int pc = 0;
     bool interruptEnabled = false;
-    std::vector<unsigned char> filebuffer;
 
     State8080 state;
-    uint32_t screenBuffer[256 * 224] = {0};
+    uint32_t screenBuffer[displayWidth * displayHeight] = {0};
 
     uint8_t shift0 = 0;
     uint8_t shift1 = 0;
@@ -75,14 +85,10 @@ class i8080 : public EmuBackend {
 
     uint8_t port[3] = {0};
 
-    void emulate8080();
-    void renderScreen();
-
     uint8_t machineIn(uint8_t port);
     void machineOut(uint8_t portNum, uint8_t val);
 
     void updateKeys();
-    void generateInterrupt(int interruptNum);
 
     void push(uint8_t high, uint8_t low);
 

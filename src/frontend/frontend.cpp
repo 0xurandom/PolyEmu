@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 
+#include "../backend/intel8080/intel8080.hpp"
 #include "nativefiledialog-extended/src/include/nfd.h"
 #include "raygui.h"
 #include "raylib.h"
@@ -58,16 +59,7 @@ void EmuWindow::initDisplay(int width, int height) {
     pixelBuffer.resize(width * height);
 }
 
-void EmuWindow::updateDisplay(const uint8_t* pixels, int width, int height) {
-    for (int i = 0; i < width * height; i++) {
-        if (pixels[i])
-            pixelBuffer[i] = config.chip8Background;
-        else
-            pixelBuffer[i] = config.chip8Foreground;
-    }
-
-    UpdateTexture(displayTexture, pixelBuffer.data());
-}
+void EmuWindow::updateDisplay(const uint8_t* pixels, int width, int height) {}
 
 void EmuWindow::drawDisplay() {
     float availableWidth = static_cast<float>(GetScreenWidth());
@@ -120,12 +112,13 @@ void EmuWindow::handleROM(const std::string filePath) {
     const char* extension = GetFileExtension(filePath.c_str());
 
     if (extension == nullptr) {
-        std::cout << "Error: Unknown file" << std::endl;
+        std::cerr << "Error: Unknown file" << std::endl;
         return;
     }
 
     if (strcmp(extension, ".ch8") == 0) {
         curBackend = Backend::Chip8;
+        initDisplay(Chip8::displayWidth, Chip8::displayHeight);
 
         if (getRomIsLoaded()) {
             getChip8Ptr().reset();
@@ -139,8 +132,18 @@ void EmuWindow::handleROM(const std::string filePath) {
         std::cout << "Chip8: Successfully loaded chip8 rom: " << filePath
                   << std::endl;
         chip8RomPath = filePath;
-    } else if (strcmp(extension, ".wasm")) {
-        //
+    } else if (strcmp(extension, ".bin") == 0) {
+        if (getRomIsLoaded()) {
+            getI8080Ptr().reset();
+        }
+
+        if (!getI8080Ptr().loadROM(filePath)) {
+            std::cerr << "Error: Couldn't load i8080 rom" << std::endl;
+            return;
+        }
+
+        curBackend = Backend::i8080;
+        initDisplay(i8080::displayWidth, i8080::displayHeight);
     }
 
     setRomIsLoaded(true);
@@ -151,12 +154,9 @@ void EmuWindow::runEmuFrame() {
     if (curBackend == Backend::Chip8) {
         updateChip8KeysPressed();
 
-        int speed;
+        int speed = getChip8InstPerFrame();
 
-        if (inFF)
-            speed = getChip8InstPerFrame() + chip8FFincrement;
-        else
-            speed = getChip8InstPerFrame();
+        if (inFF) speed += chip8FFincrement;
 
         for (int i = 0; i < speed; i++) {
             Opcode opcode = chip8->getOpcode();
@@ -165,10 +165,35 @@ void EmuWindow::runEmuFrame() {
 
         chip8->runTimers();
 
-        updateDisplay(chip8->getDisplay(), Chip8::displayWidth,
-                      Chip8::displayHeight);
+        for (int i = 0; i < Chip8::displayWidth * Chip8::displayHeight; i++) {
+            if (chip8->getDisplay()[i])
+                pixelBuffer[i] = config.chip8Background;
+            else
+                pixelBuffer[i] = config.chip8Foreground;
+        }
+
+        UpdateTexture(displayTexture, pixelBuffer.data());
+    } else if (curBackend == Backend::i8080) {
+        for (int i = 0; i < i8080HalfinstPerFrame; i++) {
+            getI8080Ptr().emulate8080();
+        }
+        getI8080Ptr().generateInterrupt(1);
+
+        for (int i = 0; i < i8080HalfinstPerFrame; i++) {
+            getI8080Ptr().emulate8080();
+        }
+        getI8080Ptr().generateInterrupt(2);
+
+        getI8080Ptr().renderScreen();
+
+        const uint32_t* screenBuffer = getI8080Ptr().getScreenBuffer();
+
+        for (int i = 0; i < i8080::displayWidth * i8080::displayHeight; i++) {
+            pixelBuffer[i] = GetColor(screenBuffer[i]);
+        }
+
+        UpdateTexture(displayTexture, pixelBuffer.data());
     }
-    // else if ()
 }
 
 void EmuWindow::drawGreeting() {
@@ -235,10 +260,11 @@ void EmuWindow::openFileDialog() {
     NFD_Init();
 
     nfdu8char_t* outPath;
-    nfdu8filteritem_t filters[2] = {{"Chip8 ROMs", "ch8"}};
+    nfdu8filteritem_t filters[2] = {{"Chip8 ROMs", "ch8"},
+                                    {"Space invaders bins", "bin"}};
     nfdopendialogu8args_t args = {0};
     args.filterList = filters;
-    args.filterCount = 1;
+    args.filterCount = 2;
 
     nfdresult_t result = NFD_OpenDialogU8_With(&outPath, &args);
 

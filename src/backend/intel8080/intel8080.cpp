@@ -17,10 +17,14 @@ bool i8080::loadROM(const std::string& filepath) {
     }
 
     std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-    filebuffer.reserve(size);
 
-    if (!file.read(reinterpret_cast<char*>(filebuffer.data()), size)) {
+    if (size > 65536) {
+        std::cerr << "i8080 rom is too large for memory" << std::endl;
+        return false;
+    }
+    file.seekg(0, std::ios::beg);
+
+    if (!file.read(reinterpret_cast<char*>(state.memory), size)) {
         std::cerr << "Error: Could not read i8080 file" << std::endl;
         return false;
     }
@@ -49,6 +53,8 @@ void i8080::reset() {
 
 void i8080::emulate8080() {
     unsigned char* opcode = &state.memory[state.pc];
+
+    uint16_t& pc = state.pc;
 
     switch (*opcode) {
         // NOP
@@ -1753,8 +1759,6 @@ void i8080::emulate8080() {
             break;
         }
     }
-
-    state.pc++;
 }
 
 void i8080::renderScreen() {
@@ -1764,7 +1768,7 @@ void i8080::renderScreen() {
         uint8_t pixelByte = state.memory[adr];
 
         for (int i = 0; i < 8; i++) {
-            bool pixel = (pixelByte >> i) & i;
+            bool pixel = (pixelByte >> i) & 1;
 
             if (pixel)
                 screenBuffer[pixelCount] = 0xFFFFFFFF;
@@ -1857,8 +1861,11 @@ void i8080::updateKeys() {
 }
 
 void i8080::generateInterrupt(int interruptNum) {
-    push((state.pc & 0xff00) >> 8, (state.pc & 0xff));
-    state.pc = 8 * interruptNum;
+    if (interruptEnabled) {
+        push((state.pc & 0xff00) >> 8, (state.pc & 0xff));
+        state.pc = 8 * interruptNum;
+        interruptEnabled = false;
+    }
 }
 
 void i8080::push(uint8_t high, uint8_t low) {
