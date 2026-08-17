@@ -54,10 +54,10 @@ struct State8080 {
 
 class i8080 : public EmuBackend {
    public:
+    i8080() { reset(); }
+
     virtual bool loadROM(const std::string& filepath) override;
     virtual void reset() override;
-
-    i8080() { reset(); }
 
     static constexpr int displayWidth = 224;
     static constexpr int displayHeight = 256;
@@ -73,7 +73,7 @@ class i8080 : public EmuBackend {
 
    private:
     int disassemble();
-    int pc = 0;
+
     bool interruptEnabled = false;
 
     State8080 state;
@@ -92,7 +92,7 @@ class i8080 : public EmuBackend {
 
     void push(uint8_t high, uint8_t low);
 
-    void unimplementedInstruction();
+    void unimplementedInstruction(unsigned char opcode);
 
     void iadd(uint8_t x);
     void iadc(uint8_t x);
