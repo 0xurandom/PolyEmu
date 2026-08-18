@@ -168,7 +168,7 @@ void i8080::emulate8080() {
 
         // INR C
         case 0x0c: {
-            uint8_t ans = state.c - 1;
+            uint8_t ans = state.c + 1;
             state.cc.ac = ((ans & 0x0f) != 0) ? 1 : 0;
             state.c = ans;
             handleArithmeticFlags(ans);

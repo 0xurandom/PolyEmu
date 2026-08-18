@@ -494,7 +494,7 @@ std::string EmuWindow::getConfigPath() {
 #if defined(__linux__)
     char* home = std::getenv("HOME");
     if (home != NULL)
-        configPath = std::string(home) + "/.config/PolyEmu.conf";
+        configPath = std::string(home) + "/.config/Polyemu/PolyEmu.conf";
     else
         std::cerr << "Error: Could not get home path for linux" << std::endl;
 
@@ -502,7 +502,7 @@ std::string EmuWindow::getConfigPath() {
     char* appdata = std::getenv("APPDATA");
 
     if (appdata != NULL)
-        configPath = std::string(appdata) + "\\PolyEmu.conf";
+        configPath = std::string(appdata) + "\\PolyEmu\PolyEmu.conf";
     else
         std::cerr << "Error: Could not get appdata path for windows"
                   << std::endl;
@@ -644,7 +644,7 @@ void EmuWindow::drawMenuBar() {
 
     std::string emulatorFmtString =
         "Emulator;{};{};Increase speed;Decrease speed;Reset "
-        "Speed;Settings;Reset";
+        "Speed;Save/Load States;Settings;Reset";
     const char* fpsText = getShowFPS() ? "Hide FPS" : "Show FPS";
     const char* pauseText = getIsPaused() ? "Resume" : "Pause";
 
@@ -687,10 +687,13 @@ void EmuWindow::drawMenuBar() {
                 break;
             }
             case 6: {
-                setSettingsOpened(!getSettingsOpened());
                 break;
             }
             case 7: {
+                setSettingsOpened(!getSettingsOpened());
+                break;
+            }
+            case 8: {
                 resetEmu();
                 break;
             }
@@ -753,6 +756,74 @@ void EmuWindow::drawMenuBar() {
         }
     }
 }
+
+void EmuWindow::drawStatesWindow() {
+    const float screenWidth = GetScreenWidth();
+    const float screenHeight = GetScreenHeight();
+
+    const float statesWidth = screenWidth / 3;
+    const float statesHeight = screenHeight * 0.9f;
+
+    const float statesX = (screenWidth / 2 - (statesWidth / 2));
+    const float statesY = (screenHeight / 2) - (statesHeight / 2);
+
+    DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.5));
+
+    if (!getRomIsLoaded()) {
+        if (GuiMessageBox(
+                Rectangle{statesX, statesY, screenWidth / 3, screenHeight / 3},
+                "Save States", "Load a ROM first", nullptr)) {
+            return;
+        }
+    }
+
+    if (GuiWindowBox(Rectangle{statesX, statesY, statesWidth, statesHeight},
+                     "Save States")) {
+        setStatesOpened(false);
+        return;
+    }
+
+    float currentY = statesY + 40.0f;
+
+    for (int i = 1; i < 6; i++) {
+        GuiLabel(Rectangle{statesX + 20, currentY, 60, 30},
+                 TextFormat("Slot %d", i));
+        std::string savePath =
+            "chip8-" + gettChip8RomPath() + '-' + std::to_string(i);
+
+        if (GuiButton(Rectangle{statesX + 80, currentY, 80, 30}, "Save")) {
+            bool successfulSave = false;
+
+            if (curBackend == Backend::Chip8)
+                successfulSave = getChip8Ptr().saveState(savePath);
+            else if (curBackend == Backend::i8080)
+                successfulSave = false;
+
+            if (!successfulSave)
+                std::cerr << "Error: Could not save state to " << savePath
+                          << std::endl;
+        }
+
+        bool stateExists = std::filesystem::exists(savePath);
+        if (!stateExists) GuiDisable();
+
+        if (GuiButton(Rectangle{statesX + 170, currentY, 80, 30}, "Load")) {
+            bool successfulLoad = false;
+
+            if (curBackend == Backend::Chip8)
+                successfulLoad = getChip8Ptr().loadState(savePath);
+            else if (curBackend == Backend::i8080)
+                successfulLoad = false;
+
+            if (!successfulLoad)
+                std::cerr << "Error: Could not load state from " << savePath
+                          << std::endl;
+        }
+
+        if (!stateExists) GuiEnable();
+    }
+}
+
 void EmuWindow::resetEmu() {
     getChip8Ptr().reset();
     getChip8Ptr().loadROM(gettChip8RomPath());

@@ -16,6 +16,48 @@ Opcode Chip8::getOpcode() {
     return opcode;
 }
 
+bool Chip8::saveState(const std::string &path) {
+    std::ofstream file(path, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open chip8 save state: " << path
+                  << std::endl;
+        return false;
+    }
+
+    file.write(reinterpret_cast<char *>(&ram), sizeof(ram));
+    file.write(reinterpret_cast<char *>(&I), sizeof(I));
+    file.write(reinterpret_cast<char *>(&stack), sizeof(stack));
+    file.write(reinterpret_cast<char *>(&sp), sizeof(sp));
+    file.write(reinterpret_cast<char *>(&V), sizeof(V));
+    file.write(reinterpret_cast<char *>(&pc), sizeof(pc));
+    file.write(reinterpret_cast<char *>(&sound_timer), sizeof(sound_timer));
+    file.write(reinterpret_cast<char *>(&delay_timer), sizeof(delay_timer));
+    file.write(reinterpret_cast<char *>(&display), sizeof(display));
+
+    return true;
+}
+
+bool Chip8::loadState(const std::string &path) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open chip8 save state: " << path
+                  << std::endl;
+        return false;
+    }
+
+    file.read(reinterpret_cast<char *>(&ram), sizeof(ram));
+    file.read(reinterpret_cast<char *>(&I), sizeof(I));
+    file.read(reinterpret_cast<char *>(&stack), sizeof(stack));
+    file.read(reinterpret_cast<char *>(&sp), sizeof(sp));
+    file.read(reinterpret_cast<char *>(&V), sizeof(V));
+    file.read(reinterpret_cast<char *>(&pc), sizeof(pc));
+    file.read(reinterpret_cast<char *>(&sound_timer), sizeof(sound_timer));
+    file.read(reinterpret_cast<char *>(&delay_timer), sizeof(delay_timer));
+    file.read(reinterpret_cast<char *>(&display), sizeof(display));
+
+    return true;
+}
+
 bool Chip8::loadROM(const std::string &filepath) {
     const unsigned int startAddr = 0x200;
     const std::streamsize maxSize = sizeof(ram) - startAddr;
@@ -51,9 +93,7 @@ void Chip8::handleOpcode(Opcode opcode) {
         case 0x0: {
             switch (opcode.NN) {
                 // 00E0
-                case 0xE0:
-                    clearScreen();
-                    break;
+                case 0xE0: clearScreen(); break;
 
                 // 00EE
                 case 0xEE: {

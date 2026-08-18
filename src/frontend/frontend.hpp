@@ -27,6 +27,8 @@ class EmuWindow {
     void updateDisplay(const uint8_t* pixels, int width, int height);
     void drawDisplay();
 
+    void drawStatesWindow();
+
     void drawSettingsWindow();
     void drawHelpWindow();
     void drawMenuBar();
@@ -68,6 +70,9 @@ class EmuWindow {
 
     bool getSettingsOpened() { return settingsOpened; }
     void setSettingsOpened(bool val) { settingsOpened = val; }
+
+    bool getStatesOpened() { return statesOpened; }
+    void setStatesOpened(bool val) { statesOpened = val; }
 
     bool gethelpOpened() { return helpOpened; }
     void setHelpOpened(bool val) { helpOpened = val; }
@@ -155,15 +160,11 @@ class EmuWindow {
     bool fullscreenToggle = false;
     bool inFullscreen = false;
     bool settingsOpened = false;
+    bool statesOpened = false;
     bool helpOpened = false;
 
     Vector2 settingsScrollPos = {0, 0};
     Rectangle settingsScrollView = {0};
-
-    const int chip8DisplayWidth = 64;
-    const int chip8DisplayHeight = 32;
-
-    const int chip8FFincrement = 15;
 
     int windowWidth = chip8DisplayWidth * config.chip8Scale;
     int windowHeight = chip8DisplayHeight * config.chip8Scale;
@@ -187,6 +188,11 @@ class EmuWindow {
     int defaultInstPerFrame = 11;
 
     std::unique_ptr<Chip8> chip8 = std::make_unique<Chip8>();
+
+    const int chip8DisplayWidth = 64;
+    const int chip8DisplayHeight = 32;
+
+    const int chip8FFincrement = 15;
 
     // intel 8080
     std::unique_ptr<i8080> intel8080 = std::make_unique<i8080>();

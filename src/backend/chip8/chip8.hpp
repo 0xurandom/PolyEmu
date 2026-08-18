@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string>
 
 #include "../backend.hpp"
 
@@ -56,6 +57,9 @@ class Chip8 : public EmuBackend {
 
     Opcode getOpcode();
     void handleOpcode(Opcode opcode);
+
+    bool saveState(const std::string& path);
+    bool loadState(const std::string& path);
 
     void runTimers();
 
