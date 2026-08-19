@@ -23,3 +23,26 @@ add_subdirectory(vendor/nativefiledialog-extended)
 target_link_libraries(polyemu PRIVATE nfd)
 
 target_link_libraries(polyemu PRIVATE raylib)
+
+if(UNIX AND NOT APPLE)
+    set(APPDIR "${CMAKE_BINARY_DIR}/PolyEmu.AppDir")
+    file(WRITE ${CMAKE_BINARY_DIR}/polyemu.desktop
+"[Desktop Entry]
+Type=Application
+Name=PolyEmu
+Exec=polyemu
+Icon=polyemu
+Categories=Emulator;
+")
+
+    file(WRITE ${CMAKE_BINARY_DIR}/AppRun
+    )
+
+    add_custom_target(appimage
+      DEPENDS polyemu
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${APPDIR}/usr/bin
+
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:polyemu> ${APPDIR}/usr/bin
+      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/polyemu.desktop ${APPDIR}
+      # COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/
+    )

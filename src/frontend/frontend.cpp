@@ -1,7 +1,5 @@
 #include "frontend.hpp"
 
-#include <algorithm>
-#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -37,7 +35,7 @@ EmuWindow::EmuWindow() {
 
     InitWindow(windowWidth, windowHeight, this->Header);
     SetExitKey(0);
-    SetWindowMinSize(64 * 8, (32 + menuBarHeight) * 8);
+    SetWindowMinSize(64 * 10, (32 * 10) + getMenubarHeight());
     SetTargetFPS(this->config.targetFPS);
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(WHITE));
     SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
@@ -327,6 +325,25 @@ void EmuWindow::checkKeyboardShortcuts() {
         toggleFullscreen();
     }
 
+    // F5: Save State
+    if (IsKeyPressed(KEY_F5)) {
+        if (curBackend == Backend::Chip8) {
+            std::string savePath = gettChip8RomPath() + "_5.save";
+            getChip8Ptr().saveState(savePath);
+        } else if (curBackend == Backend::i8080) {
+        }
+    }
+
+    // F7: Load State
+    if (IsKeyPressed(KEY_F7)) {
+        if (curBackend == Backend::Chip8) {
+            std::string savePath = gettChip8RomPath() + "_5.save";
+            if (std::filesystem::exists(savePath)) {
+                getChip8Ptr().loadState(savePath);
+            }
+        }
+    }
+
     return;
 }
 
@@ -334,7 +351,7 @@ void EmuWindow::drawSettingsWindow() {
     const float screenWidth = GetScreenWidth();
     const float screenHeight = GetScreenHeight();
 
-    const float settingsWidth = screenWidth / 3;
+    const float settingsWidth = screenWidth * 0.5;
     const float settingsHeight = screenHeight * 0.9f;
 
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.5f));
@@ -429,6 +446,26 @@ void EmuWindow::drawHelpWindow() {
         setHelpOpened(false);
         return;
     }
+
+    const char* shortcuts[] = {"Ctrl + O : Open Rom",
+                               "Ctrl + R : Reset Emulator",
+                               "Ctrl + P : Pause/Resume",
+                               "Ctrl + F : Toggle Fullscreen",
+                               "Esc      : Exit Fullscreen",
+                               "Ctrl + , : Open Settings",
+                               "Ctrl + = : Hold to fast forward",
+                               "F5       : Save State (Slot 5)",
+                               "F7       : Load State (SLot 5)"};
+
+    int shortcutCount = sizeof(shortcuts) / sizeof(shortcuts[0]);
+
+    float currentY = helpY + 40.0f;
+
+    for (int i = 0; i < shortcutCount; i++) {
+        GuiLabel(Rectangle{helpX + 20, currentY, helpWidth - 40, 30},
+                 shortcuts[i]);
+        currentY += 20;
+    }
 }
 
 void EmuWindow::toggleBorderlessWindow() {
@@ -464,7 +501,7 @@ void EmuWindow::toggleFullscreen() {
 
 void EmuWindow::updateChip8Scale() {
     SetWindowSize(getChip8Scale() * chip8DisplayWidth,
-                  getChip8Scale() * chip8DisplayHeight);
+                  (getChip8Scale() * chip8DisplayHeight) + getMenubarHeight());
     setScaleUpdated(false);
 }
 
@@ -614,8 +651,8 @@ void EmuWindow::drawMenuBar() {
 
     const float fileWidth = 70.0f;
     const float emulatorWidth = 125.0f;
-    const float windowWidth = 175.0f;
-    const float helpWidth = 70.0f;
+    const float windowWidth = 150.0f;
+    const float helpWidth = 100.0f;
 
     const float fileX = 0.0f;
     const float emulatorX = fileX + fileWidth;
@@ -668,10 +705,8 @@ void EmuWindow::drawMenuBar() {
 
                 break;
             }
-            case 2: {
-                toggleIsPaused();
-                break;
-            }
+            case 2: toggleIsPaused(); break;
+
             case 3: {
                 int speed = getChip8InstPerFrame();
                 setchip8InstPerFrame(speed + 8);
@@ -682,21 +717,13 @@ void EmuWindow::drawMenuBar() {
                 setchip8InstPerFrame(speed - 8);
                 break;
             }
-            case 5: {
-                resetchip8InstPerFrame();
-                break;
-            }
-            case 6: {
-                break;
-            }
-            case 7: {
-                setSettingsOpened(!getSettingsOpened());
-                break;
-            }
-            case 8: {
-                resetEmu();
-                break;
-            }
+            case 5: resetchip8InstPerFrame(); break;
+
+            case 6: setStatesOpened(!getStatesOpened()); break;
+
+            case 7: setSettingsOpened(!getSettingsOpened()); break;
+
+            case 8: resetEmu(); break;
         }
         menuBar.emulatorActive = 0;
     }
@@ -717,10 +744,8 @@ void EmuWindow::drawMenuBar() {
 
                 break;
             }
-            case 2: {
-                toggleBorderlessWindow();
-                break;
-            }
+            case 2: toggleBorderlessWindow(); break;
+
             case 3: {
                 config.rememberWindowSize = !config.rememberWindowSize;
                 break;
@@ -761,7 +786,7 @@ void EmuWindow::drawStatesWindow() {
     const float screenWidth = GetScreenWidth();
     const float screenHeight = GetScreenHeight();
 
-    const float statesWidth = screenWidth / 3;
+    const float statesWidth = screenWidth * 0.43f;
     const float statesHeight = screenHeight * 0.9f;
 
     const float statesX = (screenWidth / 2 - (statesWidth / 2));
@@ -788,16 +813,21 @@ void EmuWindow::drawStatesWindow() {
     for (int i = 1; i < 6; i++) {
         GuiLabel(Rectangle{statesX + 20, currentY, 60, 30},
                  TextFormat("Slot %d", i));
-        std::string savePath =
-            "chip8-" + gettChip8RomPath() + '-' + std::to_string(i);
+        std::string savePath = "";
+
+        if (curBackend == Backend::Chip8) {
+            savePath = gettChip8RomPath() + "_" + std::to_string(i) + ".save";
+        } else if (curBackend == Backend::i8080) {
+        }
 
         if (GuiButton(Rectangle{statesX + 80, currentY, 80, 30}, "Save")) {
             bool successfulSave = false;
 
-            if (curBackend == Backend::Chip8)
+            if (curBackend == Backend::Chip8) {
                 successfulSave = getChip8Ptr().saveState(savePath);
-            else if (curBackend == Backend::i8080)
+            } else if (curBackend == Backend::i8080) {
                 successfulSave = false;
+            }
 
             if (!successfulSave)
                 std::cerr << "Error: Could not save state to " << savePath
@@ -810,10 +840,11 @@ void EmuWindow::drawStatesWindow() {
         if (GuiButton(Rectangle{statesX + 170, currentY, 80, 30}, "Load")) {
             bool successfulLoad = false;
 
-            if (curBackend == Backend::Chip8)
-                successfulLoad = getChip8Ptr().loadState(savePath);
-            else if (curBackend == Backend::i8080)
+            if (curBackend == Backend::Chip8) {
+                savePath = successfulLoad = getChip8Ptr().loadState(savePath);
+            } else if (curBackend == Backend::i8080) {
                 successfulLoad = false;
+            }
 
             if (!successfulLoad)
                 std::cerr << "Error: Could not load state from " << savePath
@@ -821,6 +852,7 @@ void EmuWindow::drawStatesWindow() {
         }
 
         if (!stateExists) GuiEnable();
+        currentY += 40.0f;
     }
 }
 

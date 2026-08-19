@@ -61,6 +61,7 @@ int main(int argc, char** argv) {
         emuWindow.drawMenuBar();
 
         if (emuWindow.getSettingsOpened()) emuWindow.drawSettingsWindow();
+        if (emuWindow.getStatesOpened()) emuWindow.drawStatesWindow();
         if (emuWindow.gethelpOpened()) emuWindow.drawHelpWindow();
 
         EndDrawing();
