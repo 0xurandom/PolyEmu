@@ -34,6 +34,9 @@ EmuWindow::EmuWindow() {
             chip8DisplayHeight * config.chip8Scale + getMenubarHeight();
     }
 
+    InitAudioDevice();
+    beepSound = LoadSound("");
+
     InitWindow(windowWidth, windowHeight, this->Header);
     SetExitKey(0);
     SetWindowMinSize(64 * 10, (32 * 10) + getMenubarHeight());
@@ -44,6 +47,8 @@ EmuWindow::EmuWindow() {
 
 void EmuWindow::closeEmuWindow() {
     UnloadTexture(displayTexture);
+    UnloadSound(beepSound);
+    CloseAudioDevice();
     CloseWindow();
 }
 
@@ -143,6 +148,18 @@ void EmuWindow::handleROM(const std::string filePath) {
 
         curBackend = Backend::i8080;
         initDisplay(i8080::displayWidth, i8080::displayHeight);
+    } else if (strcmp(extension, ".p8") == 0) {
+        if (getRomIsLoaded()) {
+            getPico8Ptr().reset();
+        }
+
+        if (!getChip8Ptr().loadROM(filePath)) {
+            std::cerr << "Error: Couldn't load chip8 rom" << std::endl;
+            return;
+        }
+
+        curBackend = Backend::Chip8;
+        initDisplay(Chip8::displayWidth, Chip8::displayHeight);
     }
 
     setRomIsLoaded(true);
@@ -163,6 +180,12 @@ void EmuWindow::runEmuFrame() {
         }
 
         chip8->runTimers();
+
+        if (chip8->getSoundTimer() > 0) {
+            if (!IsSoundPlaying(beepSound)) PlaySound(beepSound);
+        } else {
+            if (IsSoundPlaying(beepSound)) StopSound(beepSound);
+        }
 
         for (int i = 0; i < Chip8::displayWidth * Chip8::displayHeight; i++) {
             if (chip8->getDisplay()[i])
@@ -191,6 +214,9 @@ void EmuWindow::runEmuFrame() {
             pixelBuffer[i] = GetColor(screenBuffer[i]);
         }
 
+        UpdateTexture(displayTexture, pixelBuffer.data());
+    } else if (curBackend == Backend::Pico8) {
+        getPico8Ptr().renderScreen(pixelBuffer);
         UpdateTexture(displayTexture, pixelBuffer.data());
     }
 }

@@ -61,6 +61,8 @@ class Chip8 : public EmuBackend {
     bool saveState(const std::string& path);
     bool loadState(const std::string& path);
 
+    uint8_t getSoundTimer() { return sound_timer; }
+
     void runTimers();
 
     void loadFonts();

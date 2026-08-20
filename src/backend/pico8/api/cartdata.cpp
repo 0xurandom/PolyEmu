@@ -9,7 +9,7 @@
 #include "api.hpp"
 using namespace std;
 
-bool p_cartdata(string id) {}
+// bool p_cartdata(string id) {}
 
 filesystem::path getSaveDir() {
 #ifdef __linux__

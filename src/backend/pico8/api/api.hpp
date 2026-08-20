@@ -1,6 +1,8 @@
 // game loop
 
 // math
+#include <lua.h>
+
 #include <cstdint>
 
 int32_t p_abs(int32_t x);
@@ -25,3 +27,6 @@ int32_t p_shr(int32_t n, int32_t bits);
 int32_t p_sin(int32_t x);
 int32_t p_sqrt(int32_t x);
 int32_t p_srand(int32_t x);  // also not working
+
+int p_poke(lua_State *L);
+int p_peek(lua_State *L);

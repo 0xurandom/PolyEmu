@@ -1,5 +1,10 @@
 #include "pico8.hpp"
 
+#include <lauxlib.h>
+#include <lua.h>
+#include <lualib.h>
+#include <raylib.h>
+
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -16,20 +21,187 @@ enum CartSection {
     NONE,
 };
 
-bool Pico8::loadROM(const string &filepath) {
-    ifstream file(filepath);
+void Pico8::reset() {}
+
+Pico8::Pico8() {
+    L = luaL_newstate();
+    luaL_openlibs(L);
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        int32_t x = luaL_checkinteger(L, 1);
+        lua_pushinteger(L, p_abs(x));
+        return 1;
+    });
+    lua_setglobal(L, "abs");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(L, p_flr(luaL_checkinteger(L, 1)));
+        return 1;
+    });
+    lua_setglobal(L, "flr");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(L, p_sin(luaL_checkinteger(L, 1)));
+        return 1;
+    });
+    lua_setglobal(L, "sin");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(L, p_cos(luaL_checkinteger(L, 1)));
+        return 1;
+    });
+    lua_setglobal(L, "cos");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        int32_t dx = luaL_checkinteger(L, 1);
+        int32_t dy = luaL_checkinteger(L, 2);
+        lua_pushinteger(L, p_atan2(dx, dy));
+        return 1;
+    });
+    lua_setglobal(L, "atan2");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(
+            L, p_band(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2)));
+        return 1;
+    });
+    lua_setglobal(L, "band");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(
+            L, p_bor(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2)));
+        return 1;
+    });
+    lua_setglobal(L, "bor");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(
+            L, p_bxor(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2)));
+        return 1;
+    });
+    lua_setglobal(L, "bxor");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(
+            L, p_shl(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2)));
+        return 1;
+    });
+    lua_setglobal(L, "shl");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(
+            L, p_shr(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2)));
+        return 1;
+    });
+    lua_setglobal(L, "shr");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(
+            L, p_lshr(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2)));
+        return 1;
+    });
+    lua_setglobal(L, "lshr");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(
+            L, p_rotl(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2)));
+        return 1;
+    });
+    lua_setglobal(L, "rotr");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        int32_t x = luaL_checkinteger(L, 1);
+        int32_t y = luaL_optinteger(L, 2, 0);
+        lua_pushinteger(L, p_max(x, y));
+        return 1;
+    });
+    lua_setglobal(L, "max");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        int32_t x = luaL_checkinteger(L, 1);
+        int32_t y = luaL_optinteger(L, 2, 0);
+        lua_pushinteger(L, p_min(x, y));
+        return 1;
+    });
+    lua_setglobal(L, "min");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        int32_t x = luaL_checkinteger(L, 1);
+        int32_t y = luaL_checkinteger(L, 2);
+        int32_t z = luaL_checkinteger(L, 3);
+        lua_pushinteger(L, p_mid(x, y, z));
+        return 1;
+    });
+    lua_setglobal(L, "mid");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(L, p_ceil(luaL_checkinteger(L, 1)));
+        return 1;
+    });
+    lua_setglobal(L, "ceil");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(L, p_bnot(luaL_checkinteger(L, 1)));
+        return 1;
+    });
+    lua_setglobal(L, "bnot");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(L, p_sgn(luaL_checkinteger(L, 1)));
+        return 1;
+    });
+    lua_setglobal(L, "sgn");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(L, p_sqrt(luaL_checkinteger(L, 1)));
+        return 1;
+    });
+    lua_setglobal(L, "sqrt");
+
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        lua_pushinteger(L, p_srand(luaL_checkinteger(L, 1)));
+        return 1;
+    });
+    lua_setglobal(L, "srand");
+
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, p_poke, 1);
+    lua_setglobal(L, "poke");
+
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, p_peek, 1);
+    lua_setglobal(L, "peek");
+}
+
+void Pico8::renderScreen(std::vector<Color> &pixelBuffer) {
+    const uint16_t vramStart = 0x6000;
+
+    for (int i = 0; i < 8192; i++) {
+        uint8_t byte = ram[vramStart + i];
+
+        uint8_t lPixel = byte & 0x0f;
+        uint8_t rPixel = (byte >> 4) & 0x0f;
+
+        int bufferAddr = i * 2;
+        pixelBuffer[bufferAddr] = GetColor(palette[lPixel]);
+        pixelBuffer[bufferAddr + 1] = GetColor(palette[rPixel]);
+    }
+}
+
+bool Pico8::loadROM(const std::string &filepath) {
+    std::ifstream file(filepath);
 
     if (!file.is_open()) {
         cerr << "Could not open file\n";
         return false;
     }
 
-    string line;
+    std::string line;
     size_t lineNum = 1;
 
     size_t luaStart, gfxStart, mapStart;
 
-    string rawLua = "";
+    std::string rawLua = "";
     CartSection cartSection = NONE;
 
     while (getline(file, line)) {

@@ -8,16 +8,14 @@
 
 #include "../backend/chip8/chip8.hpp"
 #include "../backend/intel8080/intel8080.hpp"
+#include "../backend/pico8/pico8.hpp"
 
 const KeyboardKey Chip8keymap[16] = {
     KEY_X, KEY_ONE, KEY_TWO, KEY_THREE, KEY_Q,    KEY_W, KEY_E, KEY_A,
     KEY_S, KEY_D,   KEY_Z,   KEY_C,     KEY_FOUR, KEY_R, KEY_F, KEY_V,
 };
 
-enum class Backend {
-    Chip8,
-    i8080,
-};
+enum class Backend { Chip8, i8080, Pico8 };
 
 class EmuWindow {
    public:
@@ -105,12 +103,14 @@ class EmuWindow {
 
     Chip8& getChip8Ptr() { return *chip8; }
     i8080& getI8080Ptr() { return *intel8080; }
+    Pico8& getPico8Ptr() { return *pico8; }
     std::string gettChip8RomPath() { return chip8RomPath; }
 
     // EmuBackend& getBackendPtr() {}
 
    private:
     Backend curBackend;
+    Sound beepSound;
 
     struct {
         bool fileEditMode = false;
@@ -197,4 +197,7 @@ class EmuWindow {
     // intel 8080
     std::unique_ptr<i8080> intel8080 = std::make_unique<i8080>();
     int i8080HalfinstPerFrame = 4000;
+
+    // pico8
+    std::unique_ptr<Pico8> pico8 = std::make_unique<Pico8>();
 };
