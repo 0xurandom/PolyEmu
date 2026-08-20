@@ -1,9 +1,8 @@
 // game loop
 
 // math
-#include <lua.h>
-
 #include <cstdint>
+#include <lua.hpp>
 
 int32_t p_abs(int32_t x);
 int32_t p_atan2(int32_t dx, int32_t dy);

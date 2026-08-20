@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 
         EndDrawing();
 
-        if (emuWindow.getScaleUpdated()) emuWindow.updateChip8Scale();
+        if (emuWindow.getScaleUpdated()) emuWindow.updateScale();
         if (emuWindow.getFullscreenToggle()) emuWindow.toggleFullscreen();
     }
 

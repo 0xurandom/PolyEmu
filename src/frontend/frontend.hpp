@@ -38,7 +38,7 @@ class EmuWindow {
 
     int getChip8Scale() { return config.chip8Scale; }
     void setChip8Scale(int val) { config.chip8Scale = val; }
-    void updateChip8Scale();
+    void updateScale();
 
     void resizeToRatio();
     void toggleBorderlessWindow();
@@ -140,6 +140,7 @@ class EmuWindow {
         int windowHeight = 0;
 
         int chip8Scale = 10;
+        int i8080Scale = 2;
         int chip8InstPerFrame = 11;
 
         Color chip8Background = WHITE;
@@ -166,8 +167,8 @@ class EmuWindow {
     Vector2 settingsScrollPos = {0, 0};
     Rectangle settingsScrollView = {0};
 
-    int windowWidth = chip8DisplayWidth * config.chip8Scale;
-    int windowHeight = chip8DisplayHeight * config.chip8Scale;
+    int windowWidth = Chip8::displayWidth * config.chip8Scale;
+    int windowHeight = Chip8::displayHeight * config.chip8Scale;
 
     int menuBarWidth = windowWidth;
     int menuBarHeight = 20;
@@ -188,9 +189,6 @@ class EmuWindow {
     int defaultInstPerFrame = 11;
 
     std::unique_ptr<Chip8> chip8 = std::make_unique<Chip8>();
-
-    const int chip8DisplayWidth = 64;
-    const int chip8DisplayHeight = 32;
 
     const int chip8FFincrement = 15;
 

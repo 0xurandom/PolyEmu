@@ -1,7 +1,4 @@
 #pragma once
-#include <lauxlib.h>
-#include <lua.h>
-#include <lualib.h>
 #include <raylib.h>
 
 #include <cstdint>
@@ -16,14 +13,14 @@ class Pico8 : public EmuBackend {
    public:
     Pico8() { reset(); }
     void reset() override;
-    bool saveState(std::string path);
-    bool loadState(std::string path);
     static const int displayWidth = 128;
     static const int displayHeight = 128;
 
+    int getDisplayWidth() const override { return displayWidth; }
+    int getDisplayHeight() const override { return displayHeight; }
+
     void renderScreen(std::vector<Color> &pixelBuffer);
 
-    Pico8();
     bool loadROM(const std::string &filepath) override;
 
     void setRawLua(std::string rawLua);

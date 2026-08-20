@@ -1,13 +1,12 @@
 #include "pico8.hpp"
 
-#include <lauxlib.h>
-#include <lua.h>
-#include <lualib.h>
 #include <raylib.h>
 
 #include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <iostream>
+#include <lua.hpp>
 #include <string>
 
 #include "utils.hpp"
@@ -21,9 +20,12 @@ enum CartSection {
     NONE,
 };
 
-void Pico8::reset() {}
+void Pico8::reset() {
+    std::memset(ram, 0, sizeof(ram));
+    if (L != nullptr) {
+        lua_close(L);
+    }
 
-Pico8::Pico8() {
     L = luaL_newstate();
     luaL_openlibs(L);
 

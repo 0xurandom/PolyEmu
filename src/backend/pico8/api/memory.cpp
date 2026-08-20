@@ -1,8 +1,6 @@
-#include <lauxlib.h>
-#include <lua.h>
-
 #include <cstddef>
 #include <cstdint>
+#include <lua.hpp>
 
 #include "../pico8.hpp"
 

@@ -31,11 +31,11 @@ EmuWindow::EmuWindow() {
     } else {
         windowWidth = Chip8::displayWidth * config.chip8Scale;
         windowHeight =
-            chip8DisplayHeight * config.chip8Scale + getMenubarHeight();
+            Chip8::displayHeight * config.chip8Scale + getMenubarHeight();
     }
 
     InitAudioDevice();
-    beepSound = LoadSound("");
+    beepSound = LoadSound("assets/beep.wav");
 
     InitWindow(windowWidth, windowHeight, this->Header);
     SetExitKey(0);
@@ -196,12 +196,15 @@ void EmuWindow::runEmuFrame() {
 
         UpdateTexture(displayTexture, pixelBuffer.data());
     } else if (curBackend == Backend::i8080) {
-        for (int i = 0; i < i8080HalfinstPerFrame; i++) {
+        int speed = i8080HalfinstPerFrame;
+        if (inFF) speed += 8000;
+
+        for (int i = 0; i < speed; i++) {
             getI8080Ptr().emulate8080();
         }
         getI8080Ptr().generateInterrupt(1);
         getI8080Ptr().updateKeys();
-        for (int i = 0; i < i8080HalfinstPerFrame; i++) {
+        for (int i = 0; i < speed; i++) {
             getI8080Ptr().emulate8080();
         }
         getI8080Ptr().generateInterrupt(2);
@@ -526,10 +529,16 @@ void EmuWindow::toggleFullscreen() {
     fullscreenToggle = false;
 }
 
-void EmuWindow::updateChip8Scale() {
-    SetWindowSize(
-        getChip8Scale() * Chip8::displayWidth,
-        (getChip8Scale() * Chip8::displayHeight) + getMenubarHeight());
+void EmuWindow::updateScale() {
+    if (curBackend == Backend::Chip8) {
+        SetWindowSize(
+            getChip8Scale() * Chip8::displayWidth,
+            (getChip8Scale() * Chip8::displayHeight) + getMenubarHeight());
+    } else if (curBackend == Backend::i8080) {
+        SetWindowSize(
+            config.i8080Scale * i8080::displayWidth,
+            (config.i8080Scale * i8080::displayHeight) + getMenubarHeight());
+    }
     setScaleUpdated(false);
 }
 
@@ -707,9 +716,20 @@ void EmuWindow::drawMenuBar() {
         menuBar.fileActive = 0;
     }
 
-    std::string emulatorFmtString =
-        "Emulator;{};{};Increase speed;Decrease speed;Reset "
-        "Speed;Save/Load States;Settings;Reset";
+    std::string emulatorFmtString = "Emulator;{};{};";
+
+    if (curBackend == Backend::Chip8) {
+        emulatorFmtString +=
+            "Increase speed;Decrease speed;Reset Speed;Save/Load "
+            "States;Settings;Reset";
+    } else if (curBackend == Backend::i8080) {
+        emulatorFmtString +=
+            "Increase speed;Decrease speed;Reset Speed;Save/Load "
+            "States;Settings;Reset";
+    } else if (curBackend == Backend::Pico8) {
+        emulatorFmtString += "Reset";
+    }
+
     const char* fpsText = getShowFPS() ? "Hide FPS" : "Show FPS";
     const char* pauseText = getIsPaused() ? "Resume" : "Pause";
 
@@ -736,16 +756,30 @@ void EmuWindow::drawMenuBar() {
             case 2: toggleIsPaused(); break;
 
             case 3: {
-                int speed = getChip8InstPerFrame();
-                setchip8InstPerFrame(speed + 8);
+                if (curBackend == Backend::Chip8) {
+                    int speed = getChip8InstPerFrame();
+                    setchip8InstPerFrame(speed + 8);
+                } else if (curBackend == Backend::i8080) {
+                    i8080HalfinstPerFrame += 1000;
+                }
                 break;
             }
             case 4: {
-                int speed = getChip8InstPerFrame();
-                setchip8InstPerFrame(speed - 8);
+                if (curBackend == Backend::Chip8) {
+                    int speed = getChip8InstPerFrame();
+                    setchip8InstPerFrame(speed - 8);
+                } else if (curBackend == Backend::i8080) {
+                    i8080HalfinstPerFrame -= 1000;
+                }
                 break;
             }
-            case 5: resetchip8InstPerFrame(); break;
+            case 5: {
+                if (curBackend == Backend::Chip8)
+                    resetchip8InstPerFrame();
+                else if (curBackend == Backend::i8080)
+                    i8080HalfinstPerFrame = 4000;
+                break;
+            }
 
             case 6: setStatesOpened(!getStatesOpened()); break;
 
@@ -807,6 +841,7 @@ void EmuWindow::drawMenuBar() {
                 break;
             }
         }
+        menuBar.helpActive = 0;
     }
 }
 

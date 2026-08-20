@@ -5,6 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(PolyEmu VERSION 0.1 LANGUAGES CXX)
 
 find_package(raylib 4.5 REQUIRED)
+find_package(Lua REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,6 +16,11 @@ target_sources(polyemu PRIVATE
   src/main.cpp
   src/backend/chip8/chip8.cpp
   src/backend/intel8080/intel8080.cpp
+  src/backend/pico8/pico8.cpp
+  src/backend/pico8/api/cartdata.cpp
+  src/backend/pico8/api/math.cpp
+  src/backend/pico8/api/memory.cpp
+  src/backend/pico8/utils.cpp
   src/frontend/frontend.cpp
 )
 
@@ -30,7 +36,9 @@ target_include_directories(polyemu PRIVATE vendor)
 add_subdirectory(vendor/nativefiledialog-extended)
 target_link_libraries(polyemu PRIVATE nfd)
 
-target_link_libraries(polyemu PRIVATE raylib)
+target_include_directories(polyemu PRIVATE ${LUA_INCLUDE_DIR})
+target_link_libraries(polyemu PRIVATE raylib  ${LUA_LIBRARIES})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # if(UNIX AND NOT APPLE)
     # set(APPDIR "${CMAKE_BINARY_DIR}/PolyEmu.AppDir")
