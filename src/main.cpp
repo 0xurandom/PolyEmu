@@ -2,14 +2,10 @@
 
 #include <iostream>
 
-#include "backend/chip8/chip8.hpp"
 #include "frontend/frontend.hpp"
 
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
-
-// TODO: init chip8 from window
-// using unique ptr
 
 int main(int argc, char** argv) {
     Vector2 mouseCell = {0.0f, 0.0f};

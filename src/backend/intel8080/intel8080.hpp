@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <string>
 
 #include "../backend.hpp"
@@ -64,9 +65,11 @@ class i8080 : public EmuBackend {
 
     int getDisplayWidth() const override { return displayWidth; }
     int getDisplayHeight() const override { return displayHeight; }
+    bool loadJsonByte(const std::filesystem::path& path, uint16_t offset);
 
     void emulate8080();
     void renderScreen();
+    void updateKeys();
     const uint32_t* getScreenBuffer() { return screenBuffer; }
 
     void generateInterrupt(int interruptNum);
@@ -87,8 +90,6 @@ class i8080 : public EmuBackend {
 
     uint8_t machineIn(uint8_t port);
     void machineOut(uint8_t portNum, uint8_t val);
-
-    void updateKeys();
 
     void push(uint8_t high, uint8_t low);
 

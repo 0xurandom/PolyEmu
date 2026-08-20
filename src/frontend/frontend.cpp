@@ -18,6 +18,7 @@
 
 EmuWindow::EmuWindow() {
     initConfig();
+
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
     int windowWidth;
@@ -130,7 +131,7 @@ void EmuWindow::handleROM(const std::string filePath) {
         std::cout << "Chip8: Successfully loaded chip8 rom: " << filePath
                   << std::endl;
         chip8RomPath = filePath;
-    } else if (strcmp(extension, ".bin") == 0) {
+    } else if (strcmp(extension, ".zip") == 0) {
         if (getRomIsLoaded()) {
             getI8080Ptr().reset();
         }
@@ -176,7 +177,7 @@ void EmuWindow::runEmuFrame() {
             getI8080Ptr().emulate8080();
         }
         getI8080Ptr().generateInterrupt(1);
-
+        getI8080Ptr().updateKeys();
         for (int i = 0; i < i8080HalfinstPerFrame; i++) {
             getI8080Ptr().emulate8080();
         }
@@ -259,7 +260,7 @@ void EmuWindow::openFileDialog() {
 
     nfdu8char_t* outPath;
     nfdu8filteritem_t filters[2] = {{"Chip8 ROMs", "ch8"},
-                                    {"Space invaders bins", "bin"}};
+                                    {"Space invaders zips", "zip"}};
     nfdopendialogu8args_t args = {0};
     args.filterList = filters;
     args.filterCount = 2;

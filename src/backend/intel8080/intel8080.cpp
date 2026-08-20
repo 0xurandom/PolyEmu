@@ -97,9 +97,49 @@ std::string removeJsonComments(const std::string& string) {
     return result;
 }
 
+bool i8080::loadJsonByte(const std::filesystem::path& path, uint16_t offset) {
+    std::ifstream segFile(path);
+    if (!segFile.is_open()) {
+        std::cerr << "Error: Could not open ROM segment: " << path << std::endl;
+        return false;
+    }
+
+    std::stringstream segBuffer;
+    segBuffer << segFile.rdbuf();
+    std::string result = removeJsonComments(segBuffer.str());
+
+    json_object* segRoot = json_tokener_parse(result.c_str());
+    if (segRoot == nullptr) {
+        std::cerr << "Error: Failed to parse ROM segment: " << path
+                  << std::endl;
+        return false;
+    }
+
+    json_object* bytes;
+    if (!json_object_object_get_ex(segRoot, "bytes", &bytes) ||
+        json_object_get_type(bytes) != json_type_array) {
+        std::cerr << "Error: Could not get bytes array" << std::endl;
+        json_object_put(segRoot);
+        return false;
+    }
+    int byteCount = json_object_array_length(bytes);
+
+    for (int i = 0; i < byteCount; i++) {
+        json_object* byteNum = json_object_array_get_idx(bytes, i);
+        int val = json_object_get_int(byteNum);
+        state.memory[offset + i] = static_cast<uint8_t>(val & 0xff);
+    }
+
+    json_object_put(segRoot);
+    return true;
+}
+
 bool i8080::loadROM(const std::string& filepath) {
     std::filesystem::path tempDir =
         std::filesystem::temp_directory_path() / "polyemu_extracted";
+
+    if (std::filesystem::exists(tempDir)) std::filesystem::remove_all(tempDir);
+
     if (!extractZip(filepath, tempDir.string())) {
         std::cerr << "Error: Failed to extract ROM zip: " << filepath
                   << std::endl;
@@ -154,31 +194,27 @@ bool i8080::loadROM(const std::string& filepath) {
         json_object* file;
         json_object* offset;
 
+        if (!json_object_object_get_ex(entry, "file", &file) ||
+            !json_object_object_get_ex(entry, "offset", &offset)) {
+            std::cerr << "Error: Could not read file or manifest object in json"
+                      << std::endl;
+            json_object_put(root);
+            return false;
+        }
+
         std::string fileName = json_object_get_string(file);
         std::string offsetStr = json_object_get_string(offset);
         uint16_t offsetNum =
             static_cast<uint16_t>(std::stoul(offsetStr, nullptr, 16));
 
         std::filesystem::path segmentPath = baseDir / fileName;
-        std::ifstream segFile(segmentPath, std::ios::binary | std::ios::ate);
 
-        std::streamsize size = segFile.tellg();
-        segFile.seekg(0, std::ios::beg);
-
-        if (static_cast<size_t>(offsetNum) + static_cast<size_t>(size) >
-            sizeof(state.memory)) {
-            std::cerr << "Error: ROM segment is too large to load" << std::endl;
-            json_object_put(root);
-            return false;
-        }
-
-        if (!segFile.read(reinterpret_cast<char*>(&state.memory[offsetNum]),
-                          size)) {
-            std::cerr << "Error: Could not read ROM segment" << std::endl;
+        if (!loadJsonByte(segmentPath, offsetNum)) {
             json_object_put(root);
             return false;
         }
     }
+
     json_object_put(root);
     return true;
 }
@@ -206,8 +242,8 @@ void i8080::emulate8080() {
     unsigned char* opcode = &state.memory[state.pc];
 
     uint16_t& pc = state.pc;
-    std::cout << "Got opcode: " << std::hex << static_cast<int>(*opcode)
-              << std::endl;
+    // std::cout << "Got opcode: " << std::hex << static_cast<int>(*opcode)
+    // << std::endl;
 
     switch (*opcode) {
         // NOP
@@ -977,7 +1013,7 @@ void i8080::emulate8080() {
             pc += 1;
             break;  // MOV A, H
         case 0x7d:
-            state.a = state.h;
+            state.a = state.l;
             pc += 1;
             break;  // MOV A, H
         case 0x7e:
@@ -1473,7 +1509,7 @@ void i8080::emulate8080() {
 
         // SUI D8
         case 0xd6: {
-            isbb(state.memory[pc + 1]);
+            isub(state.memory[pc + 1]);
             pc += 2;
             break;
         }
@@ -1540,7 +1576,7 @@ void i8080::emulate8080() {
         }
 
         case 0xdd: {
-            // unimplementedInstruction(*opcode);
+            unimplementedInstruction(*opcode);
             pc += 1;
             break;
         }
@@ -2000,7 +2036,7 @@ void i8080::updateKeys() {
     if (IsKeyDown(KEY_SPACE))
         port[1] |= 0x10;
     else
-        port[1] &= ~0x01;
+        port[1] &= ~0x10;
     if (IsKeyDown(KEY_LEFT))
         port[1] |= 0x20;
     else
