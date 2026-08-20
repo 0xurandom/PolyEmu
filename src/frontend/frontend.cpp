@@ -28,7 +28,7 @@ EmuWindow::EmuWindow() {
         windowWidth = config.windowWidth;
         windowHeight = config.windowHeight;
     } else {
-        windowWidth = chip8DisplayWidth * config.chip8Scale;
+        windowWidth = Chip8::displayWidth * config.chip8Scale;
         windowHeight =
             chip8DisplayHeight * config.chip8Scale + getMenubarHeight();
     }
@@ -500,8 +500,9 @@ void EmuWindow::toggleFullscreen() {
 }
 
 void EmuWindow::updateChip8Scale() {
-    SetWindowSize(getChip8Scale() * chip8DisplayWidth,
-                  (getChip8Scale() * chip8DisplayHeight) + getMenubarHeight());
+    SetWindowSize(
+        getChip8Scale() * Chip8::displayWidth,
+        (getChip8Scale() * Chip8::displayHeight) + getMenubarHeight());
     setScaleUpdated(false);
 }
 

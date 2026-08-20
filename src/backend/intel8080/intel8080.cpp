@@ -1,35 +1,185 @@
 #include "intel8080.hpp"
 
+#include <json-c/json.h>
+#include <json-c/json_object.h>
+#include <json-c/json_tokener.h>
+#include <json-c/json_types.h>
 #include <raylib.h>
 #include <sys/types.h>
+#include <zip.h>
+#include <zipconf.h>
 
 #include <bit>
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <iostream>
+#include <sstream>
+#include <string>
+
+bool extractZip(const std::string& zippath, const std::string& dest) {
+    int err = 0;
+    zip_t* zip = zip_open(zippath.c_str(), ZIP_RDONLY, &err);
+
+    if (zip == nullptr) {
+        zip_error_t zipErr;
+        zip_error_init_with_code(&zipErr, err);
+        std::cerr << "Error: Could not open i8080 zip: "
+                  << zip_error_strerror(&zipErr) << std::endl;
+        zip_error_fini(&zipErr);
+        return false;
+    }
+
+    std::filesystem::create_directories(dest);
+
+    zip_int64_t entriesCount = zip_get_num_entries(zip, 0);
+    for (zip_int64_t i = 0; i < entriesCount; i++) {
+        const char* name = zip_get_name(zip, i, 0);
+        if (name == nullptr) continue;
+
+        std::filesystem::path outPath = std::filesystem::path(dest) / name;
+        if (std::string(name).back() == '/') {
+            std::filesystem::create_directories(outPath);
+            continue;
+        }
+
+        std::filesystem::create_directories(outPath.parent_path());
+
+        zip_file_t* zipFile = zip_fopen_index(zip, i, 0);
+        if (zipFile == nullptr) {
+            std::cerr << "Warning: Could not open zip enrty: " << name
+                      << std::endl;
+            continue;
+        }
+
+        std::ofstream outFile(outPath, std::ios::binary);
+        if (!outFile.is_open()) {
+            std::cerr << "Warning: Could not make output file: " << outPath
+                      << std::endl;
+            zip_fclose(zipFile);
+            continue;
+        }
+
+        char buffer[8192];
+        zip_int64_t bytes;
+        while ((bytes = zip_fread(zipFile, buffer, sizeof(buffer))) > 0) {
+            outFile.write(buffer, bytes);
+        }
+
+        zip_fclose(zipFile);
+    }
+
+    zip_close(zip);
+    return true;
+}
+
+std::string removeJsonComments(const std::string& string) {
+    std::string result;
+    result.reserve(string.size());
+
+    bool inString = false;
+    for (size_t i = 0; i < string.size(); i++) {
+        char c = string[i];
+
+        if (c == '"') inString = !inString;
+
+        if (!inString && c == '/' && (i + 1 < string.size()) &&
+            string[i + 1] == '/') {
+            while ((i < string.size()) && string[i] != '\n') i++;
+            continue;
+        }
+        result += c;
+    }
+
+    return result;
+}
 
 bool i8080::loadROM(const std::string& filepath) {
-    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
-
-    if (!file.is_open()) {
-        std::cerr << "Error: Unable to open i8080 file" << std::endl;
+    std::filesystem::path tempDir =
+        std::filesystem::temp_directory_path() / "polyemu_extracted";
+    if (!extractZip(filepath, tempDir.string())) {
+        std::cerr << "Error: Failed to extract ROM zip: " << filepath
+                  << std::endl;
         return false;
     }
 
-    std::streamsize size = file.tellg();
-
-    if (size > 65536) {
-        std::cerr << "Error: i8080 rom is too large for memory" << std::endl;
-        return false;
-    }
-    file.seekg(0, std::ios::beg);
-
-    if (!file.read(reinterpret_cast<char*>(state.memory), size)) {
-        std::cerr << "Error: Could not read i8080 file" << std::endl;
-        return false;
+    std::filesystem::path manifestPath;
+    for (const auto& entry :
+         std::filesystem::recursive_directory_iterator(tempDir)) {
+        if (entry.path().extension() == ".json5" ||
+            entry.path().extension() == ".json") {
+            manifestPath = entry.path();
+            break;
+        }
     }
 
+    std::ifstream manifestFile(manifestPath);
+    if (!manifestFile.is_open()) {
+        std::cerr << "Error: Could not open ROM manifest: " << manifestPath
+                  << std::endl;
+        return false;
+    }
+
+    std::stringstream buffer;
+    buffer << manifestFile.rdbuf();
+    std::string manifestString = buffer.str();
+
+    json_object* root = json_tokener_parse(manifestString.c_str());
+    if (root == nullptr) {
+        std::cerr << "Error: Failed to parse ROM Manifest:" << manifestPath
+                  << std::endl;
+        return false;
+    }
+
+    json_object* romsArray;
+    if (!json_object_object_get_ex(root, "roms", &romsArray) ||
+        json_object_get_type((romsArray)) != json_type_array) {
+        std::cerr << "Error: Could not get roms in manifest" << std::endl;
+        json_object_put(root);
+        return false;
+    }
+
+    std::memset(state.memory, 0, sizeof(state.memory));
+    std::filesystem::path baseDir =
+        std::filesystem::path(manifestPath).parent_path();
+
+    int romCount = json_object_array_length(romsArray);
+
+    for (int i = 0; i < romCount; i++) {
+        json_object* entry = json_object_array_get_idx(romsArray, i);
+
+        json_object* file;
+        json_object* offset;
+
+        std::string fileName = json_object_get_string(file);
+        std::string offsetStr = json_object_get_string(offset);
+        uint16_t offsetNum =
+            static_cast<uint16_t>(std::stoul(offsetStr, nullptr, 16));
+
+        std::filesystem::path segmentPath = baseDir / fileName;
+        std::ifstream segFile(segmentPath, std::ios::binary | std::ios::ate);
+
+        std::streamsize size = segFile.tellg();
+        segFile.seekg(0, std::ios::beg);
+
+        if (static_cast<size_t>(offsetNum) + static_cast<size_t>(size) >
+            sizeof(state.memory)) {
+            std::cerr << "Error: ROM segment is too large to load" << std::endl;
+            json_object_put(root);
+            return false;
+        }
+
+        if (!segFile.read(reinterpret_cast<char*>(&state.memory[offsetNum]),
+                          size)) {
+            std::cerr << "Error: Could not read ROM segment" << std::endl;
+            json_object_put(root);
+            return false;
+        }
+    }
+    json_object_put(root);
     return true;
 }
 
@@ -581,6 +731,7 @@ void i8080::emulate8080() {
         // CMC
         case 0x3f: {
             state.cc.cy = !state.cc.cy;
+            pc += 1;
             break;
         }
 
