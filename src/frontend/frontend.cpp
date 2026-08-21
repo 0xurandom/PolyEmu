@@ -37,6 +37,17 @@ EmuWindow::EmuWindow() {
     InitAudioDevice();
     beepSound = LoadSound("assets/beep.wav");
 
+    si_ufo = LoadSound("assets/ufo_lowpitch.wav");
+    si_shoot = LoadSound("assets/shoot.wav");
+    si_playerDie = LoadSound("assets/explosion.wav");
+    si_invaderDie = LoadSound("assets/invaderkilled.wav");
+
+    si_fleet1 = LoadSound("assets/fastinvader1.wav");
+    si_fleet2 = LoadSound("assets/fastinvader2.wav");
+    si_fleet3 = LoadSound("assets/fastinvader3.wav");
+    si_fleet4 = LoadSound("assets/fastinvader4.wav");
+    si_ufoHit = LoadSound("assets/ufo_highpitch.wav");
+
     InitWindow(windowWidth, windowHeight, this->Header);
     SetExitKey(0);
     SetWindowMinSize(64 * 10, (32 * 10) + getMenubarHeight());
@@ -153,13 +164,13 @@ void EmuWindow::handleROM(const std::string filePath) {
             getPico8Ptr().reset();
         }
 
-        if (!getChip8Ptr().loadROM(filePath)) {
+        if (!getPico8Ptr().loadROM(filePath)) {
             std::cerr << "Error: Couldn't load chip8 rom" << std::endl;
             return;
         }
 
-        curBackend = Backend::Chip8;
-        initDisplay(Chip8::displayWidth, Chip8::displayHeight);
+        curBackend = Backend::Pico8;
+        initDisplay(Pico8::displayWidth, Pico8::displayHeight);
     }
 
     setRomIsLoaded(true);
@@ -198,6 +209,31 @@ void EmuWindow::runEmuFrame() {
     } else if (curBackend == Backend::i8080) {
         int speed = i8080HalfinstPerFrame;
         if (inFF) speed += 8000;
+
+        uint8_t port3 = intel8080->getPort3();
+        uint8_t port5 = intel8080->getPort5();
+
+        if (port3 != si_lastPort3) {
+            if ((port3 & 0x1) && !IsSoundPlaying(si_ufo))
+                PlaySound(si_ufo);
+            else if (!(port3 & 0x1) && !IsSoundPlaying(si_ufo))
+                StopSound(si_ufo);
+
+            if ((port3 & 0x2) && !(si_lastPort3 & 0x2)) PlaySound(si_shoot);
+            if ((port3 & 0x4) && !(si_lastPort3 & 0x4)) PlaySound(si_playerDie);
+            if ((port3 & 0x8) && !(si_lastPort3 & 0x8))
+                PlaySound(si_invaderDie);
+
+            si_lastPort3 = port3;
+        }
+
+        if (port5 != si_lastPort5) {
+            if ((port5 & 0x1) && !(si_lastPort5 & 0x1)) PlaySound(si_fleet1);
+            if ((port5 & 0x2) && !(si_lastPort5 & 0x2)) PlaySound(si_fleet2);
+            if ((port5 & 0x4) && !(si_lastPort5 & 0x4)) PlaySound(si_fleet3);
+            if ((port5 & 0x8) && !(si_lastPort5 & 0x8)) PlaySound(si_fleet4);
+            if ((port5 & 0x10) && !(si_lastPort5 & 0x10)) PlaySound(si_ufoHit);
+        }
 
         for (int i = 0; i < speed; i++) {
             getI8080Ptr().emulate8080();
@@ -653,6 +689,12 @@ void EmuWindow::loadConfig(std::string configPath) {
 }
 
 void EmuWindow::saveConfig(std::string configPath) {
+    std::filesystem::path pathObj(configPath);
+    if (pathObj.has_parent_path() &&
+        !std::filesystem::exists(pathObj.parent_path())) {
+        std::filesystem::create_directories(pathObj.parent_path());
+    }
+
     std::ofstream file(configPath);
 
     if (!file.is_open()) {
@@ -716,18 +758,18 @@ void EmuWindow::drawMenuBar() {
         menuBar.fileActive = 0;
     }
 
-    std::string emulatorFmtString = "Emulator;{};{};";
+    std::string emulatorFmtString = "Emulator;{};{}";
 
     if (curBackend == Backend::Chip8) {
         emulatorFmtString +=
-            "Increase speed;Decrease speed;Reset Speed;Save/Load "
-            "States;Settings;Reset";
+            ";Increase speed;Decrease speed;Reset Speed;Save/Load "
+            "States;Reset";
     } else if (curBackend == Backend::i8080) {
         emulatorFmtString +=
-            "Increase speed;Decrease speed;Reset Speed;Save/Load "
-            "States;Settings;Reset";
+            ";Increase speed;Decrease speed;Reset Speed;Save/Load "
+            "States;Reset";
     } else if (curBackend == Backend::Pico8) {
-        emulatorFmtString += "Reset";
+        emulatorFmtString += ";Reset";
     }
 
     const char* fpsText = getShowFPS() ? "Hide FPS" : "Show FPS";
@@ -755,37 +797,37 @@ void EmuWindow::drawMenuBar() {
             }
             case 2: toggleIsPaused(); break;
 
-            case 3: {
-                if (curBackend == Backend::Chip8) {
-                    int speed = getChip8InstPerFrame();
-                    setchip8InstPerFrame(speed + 8);
-                } else if (curBackend == Backend::i8080) {
-                    i8080HalfinstPerFrame += 1000;
+            default: {
+                if (curBackend == Backend::Pico8) {
+                    if (menuBar.emulatorActive == 3) resetEmu();
+                } else {
+                    if (menuBar.emulatorActive == 3) {
+                        if (curBackend == Backend::Chip8) {
+                            int speed = getChip8InstPerFrame();
+                            setchip8InstPerFrame(speed + 8);
+                        } else if (curBackend == Backend::i8080) {
+                            i8080HalfinstPerFrame += 1000;
+                        }
+                    } else if (menuBar.emulatorActive == 4) {
+                        if (curBackend == Backend::Chip8) {
+                            int speed = getChip8InstPerFrame();
+                            setchip8InstPerFrame(speed - 8);
+                        } else if (curBackend == Backend::i8080) {
+                            i8080HalfinstPerFrame -= 1000;
+                        }
+                    } else if (menuBar.emulatorActive == 5) {
+                        if (curBackend == Backend::Chip8)
+                            resetchip8InstPerFrame();
+                        else if (curBackend == Backend::i8080)
+                            i8080HalfinstPerFrame = 4000;
+                        break;
+                    } else if (menuBar.emulatorActive == 6) {
+                        setStatesOpened(!getStatesOpened());
+                    } else if (menuBar.emulatorActive == 7) {
+                        resetEmu();
+                    }
                 }
-                break;
             }
-            case 4: {
-                if (curBackend == Backend::Chip8) {
-                    int speed = getChip8InstPerFrame();
-                    setchip8InstPerFrame(speed - 8);
-                } else if (curBackend == Backend::i8080) {
-                    i8080HalfinstPerFrame -= 1000;
-                }
-                break;
-            }
-            case 5: {
-                if (curBackend == Backend::Chip8)
-                    resetchip8InstPerFrame();
-                else if (curBackend == Backend::i8080)
-                    i8080HalfinstPerFrame = 4000;
-                break;
-            }
-
-            case 6: setStatesOpened(!getStatesOpened()); break;
-
-            case 7: setSettingsOpened(!getSettingsOpened()); break;
-
-            case 8: resetEmu(); break;
         }
         menuBar.emulatorActive = 0;
     }

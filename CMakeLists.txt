@@ -40,25 +40,31 @@ target_include_directories(polyemu PRIVATE ${LUA_INCLUDE_DIR})
 target_link_libraries(polyemu PRIVATE raylib  ${LUA_LIBRARIES})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-# if(UNIX AND NOT APPLE)
-    # set(APPDIR "${CMAKE_BINARY_DIR}/PolyEmu.AppDir")
-    # file(WRITE ${CMAKE_BINARY_DIR}/polyemu.desktop
-# "[Desktop Entry]
-# Type=Application
-# Name=PolyEmu
-# Exec=polyemu
-# Icon=polyemu
-# Categories=Emulator;
-# ")
-#
-    # file(WRITE ${CMAKE_BINARY_DIR}/AppRun
-    # )
-#
-    # add_custom_target(appimage
-      # DEPENDS polyemu
-      # COMMAND ${CMAKE_COMMAND} -E make_directory ${APPDIR}/usr/bin
-#
-      # COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:polyemu> ${APPDIR}/usr/bin
-      # COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/polyemu.desktop ${APPDIR}
-     # COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/
-    # )
+if(UNIX AND NOT APPLE)
+    set(APPDIR "${CMAKE_BINARY_DIR}/PolyEmu.AppDir")
+    set(LINUXDEPLOY "${CMAKE_BINARY_DIR}/linuxdeploy-x86_64.AppImage")
+
+    file(WRITE ${CMAKE_BINARY_DIR}/polyemu.desktop
+"[Desktop Entry]
+Type=Application
+Name=PolyEmu
+Exec=polyemu
+Icon=polyemu
+Categories=Game;Emulator;
+")
+    file(WRITE ${CMAKE_BINARY_DIR}/polyemu.svg "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\"><rect width=\"256\" height=\"256\" fill=\"black\"/></svg>")
+
+
+    add_custom_target(appimage
+      DEPENDS polyemu
+
+      COMMAND wget -q -c https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage -O ${LINUXDEPLOY}
+      COMMAND chmod +x ${LINUXDEPLOY}
+
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${APPDIR}/usr/bin
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:polyemu> ${APPDIR}/usr/bin
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/assets ${APPDIR}/usr/bin/assets
+      COMMAND env OUTPUT=PolyEmu-x86_64.AppImage ${LINUXDEPLOY} --appdir ${APPDIR} --executable ${APPDIR}/usr/bin/polyemu --desktop-file ${CMAKE_BINARY_DIR}/polyemu.desktop --icon-file ${CMAKE_BINARY_DIR}/polyemu.svg --output appimage      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+
+      )
+      endif()

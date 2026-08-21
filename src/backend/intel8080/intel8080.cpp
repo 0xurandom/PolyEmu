@@ -2010,11 +2010,16 @@ void i8080::machineOut(uint8_t portNum, uint8_t val) {
             shiftOffset = val & 0x7;
             break;
         }
-
+        case 3: {
+            port3 = val;
+        }
         case 4: {
             shift0 = shift1;
             shift1 = val;
             break;
+        }
+        case 5: {
+            port5 = val;
         }
     }
 }

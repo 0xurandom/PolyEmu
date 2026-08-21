@@ -196,6 +196,19 @@ class EmuWindow {
     std::unique_ptr<i8080> intel8080 = std::make_unique<i8080>();
     int i8080HalfinstPerFrame = 4000;
 
+    Sound si_ufo;
+    Sound si_shoot;
+    Sound si_playerDie;
+    Sound si_invaderDie;
+    Sound si_fleet1;
+    Sound si_fleet2;
+    Sound si_fleet3;
+    Sound si_fleet4;
+    Sound si_ufoHit;
+
+    uint8_t si_lastPort3 = 0;
+    uint8_t si_lastPort5 = 0;
+
     // pico8
     std::unique_ptr<Pico8> pico8 = std::make_unique<Pico8>();
 };

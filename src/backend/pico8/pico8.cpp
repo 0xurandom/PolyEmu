@@ -1,5 +1,7 @@
 #include "pico8.hpp"
 
+#include <lauxlib.h>
+#include <lua.h>
 #include <raylib.h>
 
 #include <cstdint>
@@ -250,6 +252,23 @@ bool Pico8::loadROM(const std::string &filepath) {
     }
 
     file.close();
+
+    if (luaL_dostring(L, rawLua.c_str()) != LUA_OK) {
+        std::cerr << "Lua Error: " << lua_tostring(L, -1) << std::endl;
+        lua_pop(L, 1);
+        return false;
+    }
+
+    lua_getglobal(L, "_init");
+    if (lua_isfunction(L, -1)) {
+        if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+            std::cerr << "Lua _init error: " << lua_tostring(L, -1)
+                      << std::endl;
+            lua_pop(L, 1);
+        }
+    } else {
+        lua_pop(L, 1);
+    }
 
     cout << "Successfully loaded file\n";
     cout << "Lua:" << rawLua << '\n';

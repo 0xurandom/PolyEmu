@@ -72,6 +72,9 @@ class i8080 : public EmuBackend {
     void updateKeys();
     const uint32_t* getScreenBuffer() { return screenBuffer; }
 
+    uint8_t getPort3() const { return port3; }
+    uint8_t getPort5() const { return port5; }
+
     void generateInterrupt(int interruptNum);
 
    private:
@@ -85,6 +88,9 @@ class i8080 : public EmuBackend {
     uint8_t shift0 = 0;
     uint8_t shift1 = 0;
     uint8_t shiftOffset = 0;
+
+    uint8_t port3 = 0;
+    uint8_t port5 = 0;
 
     uint8_t port[3] = {0};
 
