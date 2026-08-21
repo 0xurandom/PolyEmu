@@ -22,7 +22,10 @@ chmod +x ./PolyEmu-x86_64.AppImage && ./PolyEmu-x86_64.AppImage
 - libzip
 - gtk3
 
-
+For fedora:
+```sh
+sudo dnf install raylib-devel lua-devel json-c-devel libzip-devel gtk3-devel
+```
 
 Clone the repo:
 ```sh
