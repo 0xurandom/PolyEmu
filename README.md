@@ -2,6 +2,14 @@
 
 An emulator for the Chip8, intel8080 supporting space invaders and partially pico8 built with raylib.
 
+## About
+
+I made this project to learn about cpu emulation, bitwise operations and raylib.
+
+In the chip8 emulator, the rom is read into the memory, and the program counter dictates the opcode to be read.
+For the intel 8080, specific files in the space invaders zip are loaded in their specified memory addresses, and the cpu handles the rest.
+To run pico8 roms, the emulator loads a lua vm, adds pico8 specific functions, and lets the lua vm read from the ROM.
+
 ## Installing
 
 ### Prebuilt binaries
