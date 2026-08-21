@@ -88,4 +88,4 @@ Pico8 controls are not yet supported.
 ![Pico8 test ROM](assets/screenshots/pico8.png)
 
 ## Credits
-Thanks to the [raylib](https://github.com/raysan5/raylib), [raygui](https://github.com/raysan5/raygui) and [nativefiledialog-extended](https://github.com/btzy/nativefiledialog-extended) for making these amazing libraries.
+Thanks to [raylib](https://github.com/raysan5/raylib), [raygui](https://github.com/raysan5/raygui) and [nativefiledialog-extended](https://github.com/btzy/nativefiledialog-extended) for making these amazing libraries.
