@@ -324,11 +324,12 @@ void EmuWindow::openFileDialog() {
     NFD_Init();
 
     nfdu8char_t* outPath;
-    nfdu8filteritem_t filters[2] = {{"Chip8 ROMs", "ch8"},
-                                    {"Space invaders zips", "zip"}};
+    nfdu8filteritem_t filters[3] = {{"Chip8 ROMs", "ch8"},
+                                    {"Space invaders zips", "zip"},
+                                    {"Pico8 ROMs", "p8"}};
     nfdopendialogu8args_t args = {0};
     args.filterList = filters;
-    args.filterCount = 2;
+    args.filterCount = 3;
 
     nfdresult_t result = NFD_OpenDialogU8_With(&outPath, &args);
 

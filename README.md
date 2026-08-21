@@ -1,6 +1,6 @@
 # PolyEmu
 
-An emulator for the Chip8, intel8080 supporting space invaders and partially pico8
+An emulator for the Chip8, intel8080 supporting space invaders and partially pico8 built with raylib.
 
 ## Installing
 
@@ -44,7 +44,8 @@ Run the appimage:
 ### Chip8
 
 ```text
-    Chip 8
+  Chip 8         Keyboard
+  
   1 2 3 C         1 2 3 4
   4 5 6 D    ->   Q W E R
   7 8 9 E         A S D F
@@ -80,3 +81,8 @@ Pico8 controls are not yet supported.
 | Ctrl + = | Hold to fast forward |
 | F5 | Save State (Slot 5) |
 | F7 | Load State (Slot 5) |
+
+## Screenshots
+![Space invaders](assets/screenshots/invaders.png)
+![Chip8 Pong](assets/screenshots/pong.png)
+![Pico8 test ROM](assets/screenshots/pico8.png)
